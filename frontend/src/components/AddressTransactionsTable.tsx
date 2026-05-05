@@ -52,43 +52,75 @@ export function AddressTransactionsTable({ address }: AddressTransactionsTablePr
 
   if (allTransactions.length === 0) {
     return (
-      <div className="text-center py-6 sm:py-8 text-sm text-gray-400">No transactions found for this address</div>
+      <div className="text-center py-6 sm:py-8 text-sm text-slate-500">No transactions found for this address</div>
     )
   }
 
   return (
     <>
-      <div className="overflow-x-auto">
-        <table className="min-w-[640px] sm:min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-2 sm:px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Height</th>
-              <th className="px-2 sm:px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Hash</th>
-              <th className="px-2 sm:px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Messages</th>
-              <th className="px-2 sm:px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Status</th>
-              <th className="px-2 sm:px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Time</th>
+      <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
+        <table className="min-w-[640px] sm:min-w-full">
+          <thead className="bg-white/[0.02]">
+            <tr className="border-b border-white/[0.06]">
+              <th className="px-4 py-3 text-left text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em] whitespace-nowrap">Height</th>
+              <th className="px-4 py-3 text-left text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em] whitespace-nowrap">Hash</th>
+              <th className="px-4 py-3 text-left text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em] whitespace-nowrap">Messages</th>
+              <th className="px-4 py-3 text-center text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em] whitespace-nowrap">Status</th>
+              <th className="px-4 py-3 text-right text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em] whitespace-nowrap">Time</th>
             </tr>
           </thead>
 
-          <tbody className="bg-white divide-y divide-gray-200">
-            {allTransactions.map(tx => (
-              <tr key={tx.tx_hash} className="hover:bg-gray-50">
-                <td className="px-2 sm:px-4 py-2 text-center text-sm text-blue-600 whitespace-nowrap">
-                  <a href={`?page=blocks&height=${tx.height}`} rel="noopener noreferrer" className="hover:underline">{tx.height.toLocaleString()}</a>
-                </td>
-                <td className="px-2 sm:px-4 py-2 text-center text-xs sm:text-sm font-mono text-blue-600 break-all max-w-[180px] sm:max-w-md">
-                  <a href={`?page=transactions&tx=${tx.tx_hash.toUpperCase()}`} rel="noopener noreferrer" className="hover:underline">
-                    <div className="truncate max-w-[220px] sm:max-w-none mx-auto" title={tx.tx_hash.toUpperCase()}>{tx.tx_hash.toUpperCase()}</div>
+          <tbody>
+            {allTransactions.map((tx) => (
+              <tr key={tx.tx_hash} className="group border-t border-white/[0.05] hover:bg-white/[0.03] transition-colors duration-150">
+                <td className="px-4 py-3 text-sm whitespace-nowrap border-l-[2px] border-l-transparent group-hover:border-l-accent-400/40">
+                  <a
+                    href={`?page=blocks&height=${tx.height}`}
+                    rel="noopener noreferrer"
+                    className="font-mono text-accent-300 hover:text-accent-200 hover:underline tabular-nums"
+                  >
+                    #{tx.height.toLocaleString()}
                   </a>
                 </td>
-                <td className="px-2 sm:px-4 py-2 text-center text-xs sm:text-sm text-gray-700 break-words">{tx.messages.join(', ')}</td>
-                <td className="px-2 sm:px-4 py-2 text-center text-sm whitespace-nowrap">
-                  <span className={`inline-block px-2 py-0.5 text-sm font-semibold rounded ${tx.status === 'success' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                    {tx.status === 'success' ? 'Success' : 'Fail'}
+                <td className="px-4 py-3 text-sm font-mono whitespace-nowrap">
+                  <a
+                    href={`?page=transactions&tx=${tx.tx_hash.toUpperCase()}`}
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-slate-200 hover:text-accent-300 transition-colors"
+                  >
+                    <span className="hidden sm:inline-block w-1.5 h-1.5 rounded-full bg-accent-500/60 group-hover:bg-accent-400 transition-colors" aria-hidden />
+                    <span className="block max-w-[200px] sm:max-w-[420px] truncate" title={tx.tx_hash.toUpperCase()}>
+                      {tx.tx_hash.toUpperCase()}
+                    </span>
+                  </a>
+                </td>
+                <td className="px-4 py-3 text-sm text-slate-300">
+                  <div className="flex flex-wrap gap-1 max-w-[260px]">
+                    {tx.messages.slice(0, 2).map((m, i) => (
+                      <span
+                        key={i}
+                        className="inline-flex items-center px-2 py-0.5 rounded-md bg-white/[0.04] text-slate-300 border border-white/[0.06] text-[11px] font-medium whitespace-nowrap"
+                      >
+                        {m}
+                      </span>
+                    ))}
+                    {tx.messages.length > 2 && (
+                      <span className="text-[11px] text-slate-500">+{tx.messages.length - 2}</span>
+                    )}
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-center text-sm whitespace-nowrap">
+                  <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-semibold rounded-md tracking-wide ${
+                    tx.status === 'success'
+                      ? 'bg-accent-500/12 text-accent-300 border border-accent-400/30'
+                      : 'bg-red-500/10 text-red-300 border border-red-400/25'
+                  }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${tx.status === 'success' ? 'bg-accent-400' : 'bg-red-400'}`} />
+                    {tx.status === 'success' ? 'Success' : 'Failed'}
                   </span>
                 </td>
-                <td className="px-2 sm:px-4 py-2 text-center text-sm text-gray-500 whitespace-nowrap" title={tx.timestamp || ''}>
-                  {tx.timestamp ? timeAgo(tx.timestamp) : '-'}
+                <td className="px-4 py-3 text-right text-sm text-slate-400 whitespace-nowrap tabular-nums" title={tx.timestamp || ''}>
+                  {tx.timestamp ? timeAgo(tx.timestamp) : '—'}
                 </td>
               </tr>
             ))}

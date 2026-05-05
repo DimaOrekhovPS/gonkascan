@@ -160,20 +160,20 @@ export function Timeline() {
   const epochData = getEpochData()
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <div className="bg-white rounded-lg shadow-sm p-3 sm:p-4 md:p-6 border border-gray-200">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">
+    <div className="space-y-5 sm:space-y-6 animate-fade-in">
+      <section className="surface border-gradient-top p-4 sm:p-5 md:p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-5 mb-4">
           <div className="col-span-2 sm:col-span-1">
             <EpochIdDisplay epochId={data.current_epoch_index} isCurrent={true} />
           </div>
 
-          <div className="border-t sm:border-t-0 sm:border-l border-gray-200 pt-4 sm:pt-0 sm:pl-4 lg:pl-6">
+          <div className="border-t sm:border-t-0 sm:border-l border-white/[0.06] pt-5 sm:pt-0 sm:pl-5 lg:pl-6">
             <StatItem label="Current Block" subText={<>Last confirmed: {data.current_block.height.toLocaleString()}</>}>
               {getEstimatedCurrentBlock().toLocaleString()}
             </StatItem>
           </div>
 
-          <div className="border-t sm:border-t-0 sm:border-l border-gray-200 pt-4 sm:pt-0 sm:pl-4 lg:pl-6">
+          <div className="border-t sm:border-t-0 sm:border-l border-white/[0.06] pt-5 sm:pt-0 sm:pl-5 lg:pl-6">
             <StatItem label="Avg Block Time" subText="">{data.avg_block_time.toFixed(2)}s</StatItem>
           </div>
 
@@ -198,11 +198,11 @@ export function Timeline() {
           isLoading={isLoading}
           onRefresh={() => refetch()}
         />
-      </div>
+      </section>
 
-      <div ref={detailedTimelineRef} className="bg-white rounded-lg shadow-sm p-3 sm:p-4 md:p-6 border border-gray-200">
+      <section ref={detailedTimelineRef} className="surface p-4 sm:p-5 md:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900">Next Epoch</h2>
+          <h2 className="section-title">Next Epoch</h2>
           {(() => {
             const detailedMinBlock = Math.max(0, data.current_block.height - 200)
             const detailedMaxBlock = data.current_block.height + data.epoch_length
@@ -217,17 +217,17 @@ export function Timeline() {
               if (blocksUntilTarget > 0) {
                 return (
                   <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm">
-                    <div className="text-gray-600">
-                      Time to block <span className="font-semibold text-gray-900">{blockToShow.toLocaleString()}</span>:
+                    <div className="text-slate-300">
+                      Time to block <span className="font-semibold text-slate-50">{blockToShow.toLocaleString()}</span>:
                     </div>
-                    <div className="font-bold text-blue-600">{formatCountdown(secondsUntilTarget)}</div>
-                    <div className="text-gray-500">(~{Math.ceil(secondsUntilTarget / data.avg_block_time).toLocaleString()} blocks)</div>
+                    <div className="font-bold text-accent-300">{formatCountdown(secondsUntilTarget)}</div>
+                    <div className="text-slate-400">(~{Math.ceil(secondsUntilTarget / data.avg_block_time).toLocaleString()} blocks)</div>
                   </div>
                 )
               } else {
                 return (
-                  <div className="text-sm text-gray-600 break-words">
-                    Block <span className="font-semibold text-gray-900">{blockToShow.toLocaleString()}</span> has passed
+                  <div className="text-sm text-slate-300 break-words">
+                    Block <span className="font-semibold text-slate-50">{blockToShow.toLocaleString()}</span> has passed
                   </div>
                 )
               }
@@ -366,7 +366,7 @@ export function Timeline() {
                         y="40"
                         width={`${((Math.min(currentEpochSetValidators, detailedMaxBlock) - Math.max(currentPocStart, detailedMinBlock)) / detailedBlockRange) * 100}%`}
                         height="200"
-                        fill="#FEE2E2"
+                        fill="rgba(248,113,113,0.16)"
                         opacity="0.5"
                       />
                     )
@@ -380,7 +380,7 @@ export function Timeline() {
                     y="40"
                     width={`${((Math.min(setValidators, detailedMaxBlock) - Math.max(validationCutoff, detailedMinBlock)) / detailedBlockRange) * 100}%`}
                     height="200"
-                    fill="#FEE2E2"
+                    fill="rgba(248,113,113,0.16)"
                     opacity="0.5"
                   />
                 )}
@@ -403,7 +403,7 @@ export function Timeline() {
                         y="40"
                         width={`${((Math.min(secondSetValidators, detailedMaxBlock) - Math.max(nextValidationCutoff, detailedMinBlock)) / detailedBlockRange) * 100}%`}
                         height="200"
-                        fill="#FEE2E2"
+                        fill="rgba(248,113,113,0.16)"
                         opacity="0.5"
                       />
                     )
@@ -416,7 +416,7 @@ export function Timeline() {
                   y1="140"
                   x2="100%"
                   y2="140"
-                  stroke="#E5E7EB"
+                  stroke="rgba(255,255,255,0.08)"
                   strokeWidth="2"
                 />
 
@@ -431,7 +431,7 @@ export function Timeline() {
                       y1="130"
                       x2={`${position}%`}
                       y2="150"
-                      stroke="#D1D5DB"
+                      stroke="rgba(255,255,255,0.14)"
                       strokeWidth="1"
                       opacity="0.3"
                     />
@@ -449,7 +449,7 @@ export function Timeline() {
                         y1="120"
                         x2={`${position}%`}
                         y2="160"
-                        stroke="#9CA3AF"
+                        stroke="rgba(255,255,255,0.22)"
                         strokeWidth="1.5"
                         opacity="0.5"
                       />
@@ -457,7 +457,7 @@ export function Timeline() {
                         x={`${position}%`}
                         y="175"
                         textAnchor="middle"
-                        className="text-xs fill-gray-500"
+                        className="text-xs" fill="rgb(125,134,150)"
                         style={{ fontSize: '10px' }}
                       >
                         {block.toLocaleString()}
@@ -471,14 +471,14 @@ export function Timeline() {
                   y1="80"
                   x2={`${((data.current_block.height - detailedMinBlock) / detailedBlockRange) * 100}%`}
                   y2="200"
-                  stroke="#111827"
+                  stroke="rgb(247,248,250)"
                   strokeWidth="3"
                 />
                 <text
                   x={`${((data.current_block.height - detailedMinBlock) / detailedBlockRange) * 100}%`}
                   y="70"
                   textAnchor="start"
-                  className="text-sm fill-gray-900 font-semibold"
+                  className="text-sm font-semibold" fill="rgb(247,248,250)"
                 >
                   Current
                 </text>
@@ -525,7 +525,7 @@ export function Timeline() {
                         y1={lineY1}
                         x2={`${position}%`}
                         y2="140"
-                        stroke="#3B82F6"
+                        stroke="rgb(62,229,177)"
                         strokeWidth="2"
                         strokeDasharray="4 2"
                       />
@@ -533,14 +533,14 @@ export function Timeline() {
                         cx={`${position}%`}
                         cy="140"
                         r="5"
-                        fill="#3B82F6"
+                        fill="rgb(62,229,177)"
                       />
                       <text
                         x={`${position}%`}
                         y={labelY}
                         textAnchor={textAnchor}
                         className="text-xs font-semibold"
-                        fill="#3B82F6"
+                        fill="rgb(62,229,177)"
                       >
                         {event.label}
                       </text>
@@ -549,7 +549,7 @@ export function Timeline() {
                         y={labelY + 12}
                         textAnchor={textAnchor}
                         className="text-xs"
-                        fill="#3B82F6"
+                        fill="rgb(62,229,177)"
                       >
                         {event.block.toLocaleString()}
                       </text>
@@ -567,7 +567,7 @@ export function Timeline() {
                           y1="80"
                           x2={`${((blockToShow - detailedMinBlock) / detailedBlockRange) * 100}%`}
                           y2="200"
-                          stroke="#8B5CF6"
+                          stroke="rgb(192,132,252)"
                           strokeWidth="3"
                           strokeDasharray="6 3"
                         />
@@ -575,14 +575,14 @@ export function Timeline() {
                           cx={`${((blockToShow - detailedMinBlock) / detailedBlockRange) * 100}%`}
                           cy="140"
                           r="8"
-                          fill="#8B5CF6"
+                          fill="rgb(192,132,252)"
                         />
                         <text
                           x={`${((blockToShow - detailedMinBlock) / detailedBlockRange) * 100}%`}
                           y="270"
                           textAnchor="middle"
                           className="text-xs font-semibold"
-                          fill="#8B5CF6"
+                          fill="rgb(192,132,252)"
                         >
                           Target
                         </text>
@@ -591,7 +591,7 @@ export function Timeline() {
                           y="215"
                           textAnchor="middle"
                           className="text-xs"
-                          fill="#8B5CF6"
+                          fill="rgb(192,132,252)"
                         >
                           {blockToShow.toLocaleString()}
                         </text>
@@ -607,7 +607,7 @@ export function Timeline() {
                     y1="80"
                     x2={`${((hoveredBlock - detailedMinBlock) / detailedBlockRange) * 100}%`}
                     y2="200"
-                    stroke="#F59E0B"
+                    stroke="rgb(251,191,36)"
                     strokeWidth="2"
                     opacity="0.5"
                   />
@@ -616,14 +616,14 @@ export function Timeline() {
             )
           })()}
         </div>
-      </div>
+      </section>
 
-      <div className="bg-white rounded-lg shadow-sm p-3 sm:p-4 md:p-6 border border-gray-200">
+      <section className="surface p-4 sm:p-5 md:p-6">
         <div className="mb-4">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">2-Month Timeline</h2>
-          <div className="text-sm text-gray-600 break-words">
+          <h2 className="section-title mb-1">2-Month Timeline</h2>
+          <div className="text-sm text-slate-300 break-words">
             Range: {minBlock.toLocaleString()} - {maxBlock.toLocaleString()} 
-            <span className="block sm:inline text-gray-500 sm:ml-2 mt-1 sm:mt-0">
+            <span className="block sm:inline text-slate-400 sm:ml-2 mt-1 sm:mt-0">
               (~{Math.round(blocksInTwoMonths / (24 * 3600 / data.avg_block_time))} days range)
             </span>
           </div>
@@ -659,7 +659,7 @@ export function Timeline() {
               y1="110"
               x2="100%"
               y2="110"
-              stroke="#E5E7EB"
+              stroke="rgba(255,255,255,0.08)"
               strokeWidth="2"
             />
 
@@ -692,7 +692,7 @@ export function Timeline() {
                     y1="90"
                     x2={`${position}%`}
                     y2="130"
-                    stroke="#D1D5DB"
+                    stroke="rgba(255,255,255,0.14)"
                     strokeWidth="1.5"
                     opacity="0.5"
                   />
@@ -701,7 +701,7 @@ export function Timeline() {
                       x={`${position}%`}
                       y="145"
                       textAnchor="middle"
-                      className="text-xs fill-gray-500"
+                      className="text-xs" fill="rgb(125,134,150)"
                       style={{ fontSize: '10px' }}
                     >
                       E{epoch.epochNumber}
@@ -716,14 +716,14 @@ export function Timeline() {
               y1="70"
               x2={`${((data.current_block.height - minBlock) / blockRange) * 100}%`}
               y2="150"
-              stroke="#111827"
+              stroke="rgb(247,248,250)"
               strokeWidth="3"
             />
             <text
               x={`${((data.current_block.height - minBlock) / blockRange) * 100}%`}
               y="170"
               textAnchor="start"
-              className="text-sm fill-gray-900 font-semibold"
+              className="text-sm font-semibold" fill="rgb(247,248,250)"
             >
               Current
             </text>
@@ -787,7 +787,7 @@ export function Timeline() {
                 y1="70"
                 x2={`${((hoveredBlock - minBlock) / blockRange) * 100}%`}
                 y2="150"
-                stroke="#F59E0B"
+                stroke="rgb(251,191,36)"
                 strokeWidth="2"
                 opacity="0.5"
               />
@@ -797,7 +797,7 @@ export function Timeline() {
 
         {hoveredBlock !== null && mousePosition && (
           <div
-            className="fixed z-50 bg-gray-900 text-white px-4 py-3 rounded-lg shadow-lg text-sm pointer-events-none"
+            className="fixed z-50 surface-raised text-slate-50 px-4 py-3 rounded-lg shadow-pop text-sm pointer-events-none"
             style={{
               left: mousePosition.x + 10,
               top: mousePosition.y - 80,
@@ -806,36 +806,36 @@ export function Timeline() {
             {hoveredEpoch !== null ? (
               <>
                 <div className="font-semibold">Epoch {hoveredEpoch} Start</div>
-                <div className="text-xs text-gray-400 mt-1">Block {hoveredBlock.toLocaleString()}</div>
-                <div className="text-xs text-gray-300 mt-1">
+                <div className="text-xs text-slate-500 mt-1">Block {hoveredBlock.toLocaleString()}</div>
+                <div className="text-xs text-slate-600 mt-1">
                   {calculateBlockTime(hoveredBlock).utc}
                 </div>
-                <div className="text-xs text-gray-300">
+                <div className="text-xs text-slate-600">
                   {calculateBlockTime(hoveredBlock).local}
                 </div>
               </>
             ) : (
               <>
                 <div className="font-semibold">Block {hoveredBlock.toLocaleString()}</div>
-                <div className="text-xs text-gray-300 mt-1">
+                <div className="text-xs text-slate-600 mt-1">
                   {calculateBlockTime(hoveredBlock).utc}
                 </div>
-                <div className="text-xs text-gray-300">
+                <div className="text-xs text-slate-600">
                   {calculateBlockTime(hoveredBlock).local}
                 </div>
               </>
             )}
           </div>
         )}
-      </div>
+      </section>
 
-      <div className="bg-white rounded-lg shadow-sm p-3 sm:p-4 md:p-6 border border-gray-200">
-        <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Network Events</h2>
-        
+      <section className="surface p-4 sm:p-5 md:p-6">
+        <h2 className="section-title mb-4">Network Events</h2>
+
         {data.events.length === 0 ? (
-          <p className="text-gray-500">No events scheduled</p>
+          <p className="text-slate-500 text-sm">No events scheduled</p>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {data.events.map((event, index) => {
               const eventTime = calculateBlockTime(event.block_height)
               const isPast = event.occurred
@@ -843,34 +843,35 @@ export function Timeline() {
               return (
                 <div
                   key={index}
-                  className={`p-3 sm:p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  className={`group surface-inset p-4 cursor-pointer transition-all duration-200 ease-out-expo hover:-translate-y-0.5 ${
                     isPast
-                      ? 'bg-gray-50 border-gray-300 hover:border-gray-400'
-                      : 'bg-blue-50 border-blue-300 hover:border-blue-400'
+                      ? 'opacity-75 hover:opacity-100'
+                      : 'border-accent-400/30 bg-accent-500/[0.04] hover:bg-accent-500/[0.08]'
                   }`}
                   onClick={() => handleTimelineClick(event.block_height)}
                 >
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                    <div className="flex-1">
-                      <div className="flex flex-wrap items-center gap-2 mb-1">
-                        <span className="font-bold text-gray-900 break-words">{event.description}</span>
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                        <span className="font-semibold text-slate-50 break-words tracking-tight">{event.description}</span>
                         <span
-                          className={`px-2 py-0.5 text-xs font-semibold rounded ${
+                          className={`inline-flex items-center px-2 py-0.5 text-[10.5px] font-semibold rounded-md tracking-wide ${
                             isPast
-                              ? 'bg-gray-200 text-gray-700'
-                              : 'bg-blue-200 text-blue-700'
+                              ? 'bg-white/[0.06] text-slate-400 border border-white/[0.06]'
+                              : 'bg-accent-500/12 text-accent-300 border border-accent-400/30'
                           }`}
                         >
-                          {isPast ? 'PAST' : 'FUTURE'}
+                          {isPast ? 'PAST' : 'UPCOMING'}
                         </span>
                       </div>
-                      <div className="text-sm text-gray-600">
-                        Block: {event.block_height.toLocaleString()}
+                      <div className="text-sm text-slate-400 tabular-nums">
+                        <span className="text-slate-500">Block</span>{' '}
+                        <span className="font-mono text-slate-200">#{event.block_height.toLocaleString()}</span>
                       </div>
                     </div>
-                    <div className="text-sm text-gray-600 md:text-right break-words">
+                    <div className="text-sm text-slate-300 md:text-right break-words tabular-nums">
                       <div>{eventTime.utc}</div>
-                      <div className="text-xs text-gray-500">{eventTime.local}</div>
+                      <div className="text-xs text-slate-500">{eventTime.local}</div>
                     </div>
                   </div>
                 </div>
@@ -878,7 +879,7 @@ export function Timeline() {
             })}
           </div>
         )}
-      </div>
+      </section>
     </div>
   )
 }

@@ -36,7 +36,7 @@ function formatTransferAmount(tx: TransferTransaction, address: string) {
   if (!coin) return { text: '-', color: '' }
   const gonka = coin.denom === 'ngonka' ? toGonka(coin.amount) : Number(coin.amount)
   const sign = isOutgoing ? '-' : '+'
-  const color = isOutgoing ? 'text-red-500' : 'text-green-500'
+  const color = isOutgoing ? 'text-red-300' : 'text-accent-400'
   return { text: `${sign}${formatGNK(gonka)}`, color }
 }
 
@@ -152,13 +152,13 @@ export function TransfersTable({ address }: TransfersTableProps) {
   if (isLoading) return <LoadingScreen label="Loading transfers..." className="py-10" />
   if (error) return <ErrorScreen error={error} title="Failed to load transfers" className="py-10" />
   if (allTransfers.length === 0) {
-    return <div className="text-center py-6 sm:py-8 text-sm text-gray-400">No transfers found</div>
+    return <div className="text-center py-6 sm:py-8 text-sm text-slate-500">No transfers found</div>
   }
 
   return (
     <>
-      <div className="overflow-x-auto">
-        <table className="min-w-[900px] sm:min-w-full divide-y divide-gray-200" style={{ tableLayout: 'fixed' }}>
+      <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
+        <table className="min-w-[900px] sm:min-w-full" style={{ tableLayout: 'fixed' }}>
           <colgroup>
             <col style={{ width: '15%' }} />
             <col style={{ width: '12%' }} />
@@ -169,79 +169,84 @@ export function TransfersTable({ address }: TransfersTableProps) {
             <col style={{ width: '8%' }} />
             <col style={{ width: '10%' }} />
           </colgroup>
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-2 sm:px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Hash</th>
-              <th className="px-2 sm:px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">
+          <thead className="bg-white/[0.02]">
+            <tr className="border-b border-white/[0.06]">
+              <th className="px-4 py-3 text-left text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em] whitespace-nowrap">Hash</th>
+              <th className="px-4 py-3 text-left text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em] whitespace-nowrap">
                 <span className="inline-flex items-center">
                   <span>Type</span>
                   <FilterIcon active={!!msgType} onClick={(e) => { closeAllPopovers(); typePop.toggle(e) }} />
                 </span>
               </th>
-              <th className="px-2 sm:px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Amount</th>
-              <th className="px-2 sm:px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">
+              <th className="px-4 py-3 text-left text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em] whitespace-nowrap">Amount</th>
+              <th className="px-4 py-3 text-left text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em] whitespace-nowrap">
                 <span className="inline-flex items-center">
                   <span>From</span>
                   <FilterIcon active={!!appliedFromAddr} onClick={(e) => { closeAllPopovers(); fromPop.toggle(e) }} />
                 </span>
               </th>
-              <th className="px-2 sm:px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">
+              <th className="px-4 py-3 text-left text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em] whitespace-nowrap">
                 <span className="inline-flex items-center">
                   <span>To</span>
                   <FilterIcon active={!!appliedToAddr} onClick={(e) => { closeAllPopovers(); toPop.toggle(e) }} />
                 </span>
               </th>
-              <th className="px-2 sm:px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">
+              <th className="px-4 py-3 text-center text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em] whitespace-nowrap">
                 <span className="inline-flex items-center">
                   <span>Status</span>
                   <FilterIcon active={!!statusFilter} onClick={(e) => { closeAllPopovers(); statusPop.toggle(e) }} />
                 </span>
               </th>
-              <th className="px-2 sm:px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">Height</th>
-              <th className="px-2 sm:px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">
-                <span className="inline-flex items-center justify-end">
+              <th className="px-4 py-3 text-left text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em] whitespace-nowrap">Height</th>
+              <th className="px-4 py-3 text-right text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em] whitespace-nowrap">
+                <span className="inline-flex items-center justify-end w-full">
                   <span>Time</span>
                   <FilterIcon active={!!(timeFrom || timeTo)} onClick={(e) => { closeAllPopovers(); timePop.toggle(e) }} />
                 </span>
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody>
             {list.map((tx, idx) => {
               const amt = formatTransferAmount(tx, address)
               return (
-                <tr key={`${tx.tx_hash}-${idx}`} className="hover:bg-gray-50">
-                  <td className="px-2 sm:px-4 py-2 text-sm font-mono whitespace-nowrap overflow-hidden text-ellipsis">
-                    <a href={`?page=transactions&tx=${tx.tx_hash.toUpperCase()}`} className="text-blue-600 hover:underline" title={tx.tx_hash.toUpperCase()}>
+                <tr key={`${tx.tx_hash}-${idx}`} className="group border-t border-white/[0.05] hover:bg-white/[0.03] transition-colors duration-150">
+                  <td className="px-4 py-3 text-sm font-mono whitespace-nowrap overflow-hidden text-ellipsis border-l-[2px] border-l-transparent group-hover:border-l-accent-400/40">
+                    <a href={`?page=transactions&tx=${tx.tx_hash.toUpperCase()}`} className="text-accent-300 hover:text-accent-200 hover:underline tabular-nums" title={tx.tx_hash.toUpperCase()}>
                       {shortHash(tx.tx_hash.toUpperCase(), 8)}
                     </a>
                   </td>
-                  <td className="px-2 sm:px-4 py-2 text-sm text-gray-700 whitespace-nowrap overflow-hidden text-ellipsis">{tx.msg_type || '-'}</td>
-                  <td className={`px-2 sm:px-4 py-2 text-sm font-medium whitespace-nowrap overflow-hidden text-ellipsis text-left ${amt.color}`}>{amt.text}</td>
-                  <td className="px-2 sm:px-4 py-2 text-sm font-mono whitespace-nowrap overflow-hidden text-ellipsis">
+                  <td className="px-4 py-3 text-sm text-slate-300 whitespace-nowrap overflow-hidden text-ellipsis">{tx.msg_type || '—'}</td>
+                  <td className={`px-4 py-3 text-sm font-semibold whitespace-nowrap overflow-hidden text-ellipsis text-left tabular-nums ${amt.color}`}>{amt.text}</td>
+                  <td className="px-4 py-3 text-sm font-mono whitespace-nowrap overflow-hidden text-ellipsis">
                     {tx.from_address ? (
-                      <a href={`?page=address&address=${tx.from_address}`} className="hover:underline text-blue-600" title={tx.from_address}>
+                      <a href={`?page=address&address=${tx.from_address}`} className="text-accent-300 hover:text-accent-200 hover:underline" title={tx.from_address}>
                         {shortHash(tx.from_address, 8)}
                       </a>
-                    ) : '-'}
+                    ) : <span className="text-slate-600">—</span>}
                   </td>
-                  <td className="px-2 sm:px-4 py-2 text-sm font-mono whitespace-nowrap overflow-hidden text-ellipsis">
+                  <td className="px-4 py-3 text-sm font-mono whitespace-nowrap overflow-hidden text-ellipsis">
                     {tx.to_address ? (
-                      <a href={`?page=address&address=${tx.to_address}`} className="hover:underline text-blue-600" title={tx.to_address}>
+                      <a href={`?page=address&address=${tx.to_address}`} className="text-accent-300 hover:text-accent-200 hover:underline" title={tx.to_address}>
                         {shortHash(tx.to_address, 8)}
                       </a>
-                    ) : '-'}
+                    ) : <span className="text-slate-600">—</span>}
                   </td>
-                  <td className="px-2 sm:px-4 py-2 text-sm text-center whitespace-nowrap">
-                    <span className={`inline-block px-2 py-0.5 text-sm font-semibold rounded ${tx.status === 'success' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                      {tx.status === 'success' ? 'Success' : 'Fail'}
+                  <td className="px-4 py-3 text-sm text-center whitespace-nowrap">
+                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-semibold rounded-md tracking-wide ${
+                      tx.status === 'success'
+                        ? 'bg-accent-500/12 text-accent-300 border border-accent-400/30'
+                        : 'bg-red-500/10 text-red-300 border border-red-400/25'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${tx.status === 'success' ? 'bg-accent-400' : 'bg-red-400'}`} />
+                      {tx.status === 'success' ? 'Success' : 'Failed'}
                     </span>
                   </td>
-                  <td className="px-2 sm:px-4 py-2 text-sm text-left whitespace-nowrap">
-                    <a href={`?page=blocks&height=${tx.height}`} className="text-blue-600 hover:underline">{tx.height.toLocaleString()}</a>
+                  <td className="px-4 py-3 text-sm text-left whitespace-nowrap">
+                    <a href={`?page=blocks&height=${tx.height}`} className="font-mono text-accent-300 hover:text-accent-200 hover:underline tabular-nums">#{tx.height.toLocaleString()}</a>
                   </td>
-                  <td className="px-2 sm:px-4 py-2 text-sm text-gray-500 text-center whitespace-nowrap" title={tx.timestamp || ''}>
-                    {tx.timestamp ? timeAgo(tx.timestamp) : '-'}
+                  <td className="px-4 py-3 text-sm text-slate-400 text-right whitespace-nowrap tabular-nums" title={tx.timestamp || ''}>
+                    {tx.timestamp ? timeAgo(tx.timestamp) : '—'}
                   </td>
                 </tr>
               )
@@ -266,55 +271,45 @@ export function TransfersTable({ address }: TransfersTableProps) {
       {timePop.open && (
         <div
           ref={timePop.popoverRef}
-          className="fixed z-[9999] bg-white border border-gray-200 rounded-lg shadow-lg p-4 w-72"
+          className="fixed z-[9999] surface-raised p-4 w-72"
           style={{ top: timePop.pos.top, left: timePop.pos.left }}
         >
-          <div className="text-sm font-semibold text-gray-700 mb-2">Set Duration</div>
-          <div className="flex flex-wrap gap-2 mb-4">
+          <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-500 mb-2">Quick presets</div>
+          <div className="flex flex-wrap gap-1.5 mb-4">
             {DURATION_PRESETS.map(p => (
               <button
                 key={p.label}
                 onClick={() => applyPreset(p.hours)}
-                className="text-xs font-medium border border-gray-300 rounded px-3 py-1.5 bg-white text-gray-600 hover:bg-gray-100"
+                className="text-xs font-medium px-3 h-7 rounded-md bg-white/[0.04] text-slate-200 hover:bg-white/[0.07] border border-white/[0.06] transition-colors"
               >
                 {p.label}
               </button>
             ))}
           </div>
-          <div className="text-sm font-semibold text-gray-700 mb-2">Custom Duration</div>
+          <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-500 mb-2">Custom range</div>
           <div className="space-y-2 mb-4">
             <div>
-              <label className="text-xs text-gray-500">From</label>
+              <label className="text-[11px] text-slate-400 block mb-1">From</label>
               <input
                 type="date"
                 value={customFrom}
                 onChange={e => setCustomFrom(e.target.value)}
-                className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm text-gray-700"
+                className="input h-9 text-sm"
               />
             </div>
             <div>
-              <label className="text-xs text-gray-500">To</label>
+              <label className="text-[11px] text-slate-400 block mb-1">To</label>
               <input
                 type="date"
                 value={customTo || new Date().toISOString().split('T')[0]}
                 onChange={e => setCustomTo(e.target.value)}
-                className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm text-gray-700"
+                className="input h-9 text-sm"
               />
             </div>
           </div>
           <div className="flex gap-2">
-            <button
-              onClick={applyCustomTime}
-              className="flex-1 text-sm font-medium bg-blue-500 text-white rounded px-3 py-1.5 hover:bg-blue-600"
-            >
-              Apply
-            </button>
-            <button
-              onClick={clearTime}
-              className="flex-1 text-sm font-medium border border-gray-300 rounded px-3 py-1.5 text-gray-600 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
+            <button onClick={applyCustomTime} className="btn-primary flex-1 h-9 text-sm">Apply</button>
+            <button onClick={clearTime} className="btn-secondary flex-1 h-9 text-sm">Cancel</button>
           </div>
         </div>
       )}

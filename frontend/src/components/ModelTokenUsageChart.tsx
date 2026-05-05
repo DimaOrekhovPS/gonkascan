@@ -16,27 +16,27 @@ function TokenUsageTooltip({ active, payload, label }: ChartTooltipProps) {
   const total = prompt + completion
 
   return (
-    <div className="rounded-md shadow-md border border-gray-200 bg-white overflow-hidden min-w-[160px] sm:min-w-[180px] max-w-[240px]">
+    <div className="rounded-lg border border-white/[0.10] bg-night-300 overflow-hidden min-w-[160px] sm:min-w-[180px] max-w-[240px]">
       <div className="bg-black text-white text-[10px] sm:text-[11px] font-medium px-2 py-1">{label}</div>
 
       <div className="px-2 py-2 text-[11px] sm:text-[12px] space-y-1">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-blue-600">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-600" />Prompt tokens
+          <div className="flex items-center gap-1.5 text-accent-300">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent-600" />Prompt tokens
           </div>
           <div className="font-medium">{formatCompact(prompt)}</div>
         </div>
 
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-green-600">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-600" />Completion tokens
+          <div className="flex items-center gap-1.5 text-accent-300">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent-600" />Completion tokens
           </div>
           <div className="font-medium">{formatCompact(completion)}
           </div>
         </div>
       </div>
 
-      <div className="border-t border-gray-200 px-2 py-1.5 flex justify-between text-[11px] sm:text-[12px] font-semibold">
+      <div className="border-t border-white/[0.06] px-2 py-1.5 flex justify-between text-[11px] sm:text-[12px] font-semibold">
         <span>Total</span>
         <span>{formatCompact(total)}</span>
       </div>
@@ -46,9 +46,9 @@ function TokenUsageTooltip({ active, payload, label }: ChartTooltipProps) {
 
 export function ModelTokenUsageChart({ data }: { data: TokenUsageRow[] }) {
   return (
-    <div className="bg-white relative z-0">
-      <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1">Recent Activity</h3>
-      <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4 leading-relaxed">Token usage per epoch</p>
+    <div className="bg-transparent relative z-0">
+      <h3 className="text-base sm:text-lg font-semibold text-slate-50 mb-1">Recent Activity</h3>
+      <p className="text-xs sm:text-sm text-slate-400 mb-3 sm:mb-4 leading-relaxed">Token usage per epoch</p>
 
       <div className="h-64 sm:h-72 overflow-x-auto">
         <div className="h-full min-w-[640px] sm:min-w-0">
