@@ -115,7 +115,7 @@ export function MarketStats() {
       </div>
 
       {/* Token stats grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+      {/* <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         {[
           { label: 'Circulating supply', value: token_stats.user_circulating },
           { label: 'Total supply', value: token_stats.total_supply },
@@ -133,7 +133,7 @@ export function MarketStats() {
             </div>
           </div>
         ))}
-      </div>
+      </div> */}
     </section>
   )
 }

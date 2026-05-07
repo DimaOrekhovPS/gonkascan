@@ -97,9 +97,9 @@ function App() {
   })
 
   const estimatedBlock = useEstimatedBlock(
-    data?.current_block_height || 0,
-    data?.current_block_timestamp || new Date().toISOString(),
-    data?.avg_block_time || 6,
+    data?.current_block_height ?? 0,
+    data?.current_block_timestamp ?? '',
+    data?.avg_block_time ?? 6,
   )
 
   const shouldShowEstimatedBlock = data?.current_block_height && data?.current_block_timestamp && data?.avg_block_time

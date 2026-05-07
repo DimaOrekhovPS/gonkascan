@@ -67,9 +67,9 @@ export function Timeline() {
   }, [data])
 
   const estimatedCurrentBlock = useEstimatedBlock(
-    data?.current_block.height || 0,
-    data?.current_block.timestamp || new Date().toISOString(),
-    data?.avg_block_time || 6,
+    data?.current_block.height ?? 0,
+    data?.current_block.timestamp ?? '',
+    data?.avg_block_time ?? 6,
   )
 
   const getEstimatedCurrentBlock = (): number => {

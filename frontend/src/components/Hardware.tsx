@@ -105,6 +105,21 @@ export function Hardware() {
     handleHardwareSelect(hardware.id)
   }
 
+  // NOTE: hooks must be called unconditionally on every render, so derived
+  // memos go before any early returns.
+  const allModels = useMemo(
+    () => (data ? Array.from(new Set(data.hardware.flatMap((hardware) => hardware.models))).sort() : []),
+    [data],
+  )
+
+  const modelOptions = useMemo<ReadonlyArray<SelectOption<string>>>(
+    () => [
+      { value: '', label: 'All models' },
+      ...allModels.map((model) => ({ value: model, label: model })),
+    ],
+    [allModels],
+  )
+
   if (isLoading && !data) {
     return <LoadingScreen label="Loading hardware..." />
   }
@@ -115,15 +130,6 @@ export function Hardware() {
 
   if (!data) return null
 
-  const allModels = useMemo(
-    () => Array.from(new Set(data.hardware.flatMap(hardware => hardware.models))).sort(),
-    [data.hardware],
-  )
-
-  const modelOptions: ReadonlyArray<SelectOption<string>> = [
-    { value: '', label: 'All models' },
-    ...allModels.map((model) => ({ value: model, label: model })),
-  ]
   let filteredHardwares = data.hardware
 
   if (selectedModel) {
