@@ -4,19 +4,35 @@ interface NavTabProps {
   active: boolean
   onClick: () => void
   children: string
+  /** When true, the tab adapts to a transparent header (uses lighter text). */
+  onHeader?: boolean
 }
 
 export function NavTab({ active, onClick, children }: NavTabProps) {
   return (
     <button
       onClick={onClick}
-      className={`whitespace-nowrap shrink-0 px-4 py-2 text-sm sm:text-base font-medium rounded-md transition-colors ${
-        active
-          ? 'bg-gray-900 text-white'
-          : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-      }`}
+      className={`group relative whitespace-nowrap shrink-0 px-3.5 h-9 text-[13px] font-medium rounded-lg
+        transition-all duration-200 ease-out-expo
+        ${
+          active
+            ? 'text-slate-50'
+            : 'text-slate-400 hover:text-slate-100'
+        }`}
     >
-      {children}
+      {active && (
+        <span
+          aria-hidden
+          className="absolute inset-0 rounded-lg bg-white/[0.06] border border-white/[0.10] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]"
+        />
+      )}
+      <span className="relative z-10">{children}</span>
+      {!active && (
+        <span
+          aria-hidden
+          className="absolute inset-x-3.5 bottom-1 h-px origin-center scale-x-0 rounded-full bg-gradient-to-r from-transparent via-accent-400/70 to-transparent transition-transform duration-300 ease-out-expo group-hover:scale-x-100"
+        />
+      )}
     </button>
   )
 }
@@ -46,35 +62,65 @@ export function NavDropdown({ label, active, items, activePage, onSelect }: NavD
   return (
     <div ref={ref} className="relative">
       <button
-        onClick={() => setOpen(prev => !prev)}
-        className={`whitespace-nowrap shrink-0 px-4 py-2 text-sm sm:text-base font-medium rounded-md transition-colors flex items-center gap-1 ${
-          active
-            ? 'bg-gray-900 text-white'
-            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-        }`}
+        onClick={() => setOpen((prev) => !prev)}
+        className={`group relative whitespace-nowrap shrink-0 px-3.5 h-9 text-[13px] font-medium rounded-lg
+          transition-all duration-200 ease-out-expo flex items-center gap-1.5
+          ${
+            active
+              ? 'text-slate-50'
+              : 'text-slate-400 hover:text-slate-100'
+          }`}
       >
-        {label}
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-          <path d="M6 9l6 6 6-6" />
+        {active && (
+          <span
+            aria-hidden
+            className="absolute inset-0 rounded-lg bg-white/[0.06] border border-white/[0.10] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]"
+          />
+        )}
+        <span className="relative z-10">{label}</span>
+        <svg
+          className={`relative z-10 w-3 h-3 text-slate-500 transition-transform duration-300 ease-out-expo ${
+            open ? 'rotate-180 text-slate-200' : ''
+          }`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2.4}
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="m6 9 6 6 6-6" />
         </svg>
+        {!active && (
+          <span
+            aria-hidden
+            className="absolute inset-x-3.5 bottom-1 h-px origin-center scale-x-0 rounded-full bg-gradient-to-r from-transparent via-accent-400/70 to-transparent transition-transform duration-300 ease-out-expo group-hover:scale-x-100"
+          />
+        )}
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-50 min-w-[180px]">
-          {items.map(item => (
+        <div
+          className="absolute left-0 top-full mt-2 z-50 min-w-[200px] origin-top animate-fade-in py-1.5
+            rounded-xl bg-night-200/95 border border-white/[0.08] shadow-pop backdrop-blur-xl"
+        >
+          {items.map((item) => (
             <button
               key={item.page}
               onClick={() => {
                 onSelect(item.page)
                 setOpen(false)
               }}
-              className={`block w-full text-left px-4 py-2.5 text-sm sm:text-base font-medium transition-colors ${
+              className={`group/item relative flex w-full items-center justify-between px-3 py-2 text-[13px] font-medium transition-colors mx-1 rounded-lg ${
                 activePage === item.page
-                  ? 'bg-gray-100 text-gray-900'
-                  : 'text-gray-700 hover:bg-gray-50'
+                  ? 'bg-accent-500/10 text-accent-300'
+                  : 'text-slate-300 hover:bg-white/[0.04] hover:text-slate-50'
               }`}
             >
-              {item.label}
+              <span>{item.label}</span>
+              {activePage === item.page && (
+                <span
+                  className="w-1.5 h-1.5 rounded-full bg-accent-400 shadow-[0_0_8px_rgba(62,229,177,0.7)]"
+                />
+              )}
             </button>
           ))}
         </div>

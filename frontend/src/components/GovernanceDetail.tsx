@@ -73,8 +73,8 @@ const CustomTooltip = ({ active, payload }: ChartTooltipProps) => {
   const timeLabel = ts ? formatDateTime(ts) : ''
 
   return (
-    <div className="bg-white rounded-md shadow px-4 py-3 text-sm space-y-2">
-      <div className="font-medium text-gray-800 border-b pb-1">{timeLabel}</div>
+    <div className="surface px-4 py-3 text-sm space-y-2">
+      <div className="font-medium text-slate-100 border-b pb-1">{timeLabel}</div>
 
       {payload.map((p) => (
         <div
@@ -183,130 +183,115 @@ export function GovernanceDetail({ proposalId }: { proposalId: string }) {
   )
 
   return (
-    <div className="w-full max-w-[1440px] mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-5 md:py-6">
-      <div className="px-0 sm:px-2 md:px-6 py-2 sm:py-4">
-        <BackNavigation onBack={() => window.history.back()} backLabel="Governance" title={<>{proposal.id}. {proposal.title}</>} />
+    <div className="w-full max-w-[1440px] mx-auto animate-fade-in">
+      <div className="mb-5 sm:mb-6">
+        <BackNavigation onBack={() => window.history.back()} backLabel="Back to Governance" title={<><span className="font-mono text-slate-500">#{proposal.id}</span> {proposal.title}</>} />
       </div>
 
       {/* Summary */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        <section className="bg-white border rounded-lg p-4 sm:p-6 flex flex-col">
+        <section className="surface p-4 sm:p-6 flex flex-col">
           {messageTypeTags.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-3">
               {messageTypeTags.map((t) => (
                 <span
                   key={t}
                   className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold
-                                        bg-blue-50 text-blue-700 border border-blue-200"
+                                        bg-accent-500/[0.06] text-accent-300 border border-accent-400/30"
                 >
                   {t}
                 </span>
               ))}
             </div>
           )}
-          <h2 className="text-base sm:text-lg font-semibold text-gray-900 break-words">{proposal.id}. {proposal.title}</h2>
+          <h2 className="text-base sm:text-lg font-bold text-slate-50 break-words tracking-tight">
+            <span className="font-mono text-slate-500 mr-1">#{proposal.id}</span>
+            {proposal.title}
+          </h2>
           {votingTimeText && (
-            <div className="mt-1 mb-5 text-sm text-gray-500 leading-relaxed break-words">Voting Time: {votingTimeText}</div>
+            <div className="mt-1 mb-5 text-[12.5px] text-slate-400 leading-relaxed break-words">
+              <span className="text-slate-500">Voting period</span> · {votingTimeText}
+            </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-base mb-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-5 gap-y-4 mb-5">
             <div>
-              <p className="text-xs text-gray-500 tracking-wide">STATUS</p>
-              <p className="font-semibold text-green-600 text-base sm:text-lg break-words">{proposal.status.replace('PROPOSAL_STATUS_', '')}</p>
+              <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-500 mb-1.5">Status</p>
+              <p className="font-bold text-accent-300 text-base sm:text-lg break-words tracking-tight">{proposal.status.replace('PROPOSAL_STATUS_', '')}</p>
             </div>
-
             <div>
-              <p className="text-xs text-gray-500 tracking-wide">EPOCH</p>
-              <p className="font-medium text-base sm:text-lg break-words">{proposal.epoch_id}</p>
+              <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-500 mb-1.5">Epoch</p>
+              <p className="font-bold text-slate-50 text-base sm:text-lg break-words tabular-nums tracking-tight">#{proposal.epoch_id}</p>
             </div>
-
             <div>
-              <p className="text-xs text-gray-500 tracking-wide">TURNOUT / QUORUM</p>
-              <p className="font-medium text-base sm:text-lg break-words">
+              <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-500 mb-1.5">Turnout / Quorum</p>
+              <p className="font-bold text-slate-50 text-base sm:text-lg break-words tabular-nums tracking-tight">
                 {proposal.total_weight > 0
                   ? ((proposal.voted_weight / proposal.total_weight) * 100).toFixed(2)
-                  : ' - '}
-                /{' '}
+                  : '—'}
+                <span className="text-slate-500 mx-1">/</span>
                 {(Number(proposal.tally_params?.quorum || 0) * 100).toFixed(2)}%
               </p>
             </div>
           </div>
 
-          {/* Bottom metrics (compact) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-base">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4 pt-4 border-t border-white/[0.06]">
             <div>
-              <p className="text-xs text-gray-500">WEIGHT</p>
-              <p className="font-semibold break-words">
-                {proposal.total_weight > 0 ? (
-                  <>
-                    {formatCompact(proposal.voted_weight)}/{formatCompact(proposal.total_weight)}
-                  </>
-                ) : (
-                  <>
-                    {formatCompact(proposal.voted_weight)}/-
-                  </>
-                )}
+              <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-500 mb-1.5">Weight</p>
+              <p className="font-bold text-slate-100 break-words tabular-nums">
+                {proposal.total_weight > 0
+                  ? <>{formatCompact(proposal.voted_weight)}<span className="text-slate-500 mx-1">/</span>{formatCompact(proposal.total_weight)}</>
+                  : <>{formatCompact(proposal.voted_weight)}<span className="text-slate-500 mx-1">/</span>—</>
+                }
               </p>
             </div>
-
             <div>
-              <p className="text-xs text-gray-500">ADDRESS</p>
-              <p className="font-semibold break-words">{proposal.total_voters}/{proposal.total_participants}</p>
+              <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-500 mb-1.5">Voters</p>
+              <p className="font-bold text-slate-100 break-words tabular-nums">{proposal.total_voters}<span className="text-slate-500 mx-1">/</span>{proposal.total_participants}</p>
             </div>
           </div>
         </section>
 
-        <section className="bg-white border rounded-lg p-4 sm:p-6">
-          <h3 className="font-semibold mb-4">Tally</h3>
+        <section className="surface p-4 sm:p-6">
+          <h3 className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-500 mb-4">Tally</h3>
 
           {(() => {
             const tally = proposal.final_tally_result || {}
-
             const yes = Number(tally.yes_count || 0)
             const no = Number(tally.no_count || 0)
             const veto = Number(tally.no_with_veto_count || 0)
             const abstain = Number(tally.abstain_count || 0)
-
             const total = yes + no + veto + abstain
-
             const pct = (v: number) => (total > 0 ? (v / total) * 100 : 0)
+
+            const rows = [
+              { label: 'Yes', value: yes, fill: 'bg-accent-400', text: 'text-accent-300' },
+              { label: 'No', value: no, fill: 'bg-red-400', text: 'text-red-300' },
+              { label: 'No With Veto', value: veto, fill: 'bg-violet-400', text: 'text-violet-300' },
+              { label: 'Abstain', value: abstain, fill: 'bg-amber-400', text: 'text-amber-300' },
+            ]
 
             return (
               <div className="space-y-4 text-sm">
-                {/* YES */}
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="font-medium text-gray-900">Yes</span>
-                    <span className="text-gray-500">{pct(yes).toFixed(2)}%</span>
+                {rows.map((row) => (
+                  <div key={row.label}>
+                    <div className="flex justify-between items-baseline mb-1.5">
+                      <span className="inline-flex items-center gap-2 text-slate-200 font-medium">
+                        <span className={`w-2 h-2 rounded-full ${row.fill}`} />
+                        {row.label}
+                      </span>
+                      <span className={`text-[12.5px] tabular-nums font-semibold ${row.text}`}>
+                        {pct(row.value).toFixed(2)}%
+                      </span>
+                    </div>
+                    <div className="h-2 bg-white/[0.04] rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${row.fill} rounded-full transition-all duration-500 ease-out-expo`}
+                        style={{ width: `${pct(row.value)}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-green-500 rounded-full"
-                      style={{ width: `${pct(yes)}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* NO */}
-                <div className="flex items-center gap-3">
-                  <span className="w-4 h-4 rounded bg-red-500" />
-                  <span className="flex-1 text-gray-900">No</span>
-                  <span className="text-gray-500">{pct(no).toFixed(2)}%</span>
-                </div>
-
-                {/* NO WITH VETO */}
-                <div className="flex items-center gap-3">
-                  <span className="w-4 h-4 rounded bg-pink-400" />
-                  <span className="flex-1 text-gray-900">No With Veto</span>
-                  <span className="text-gray-500">{pct(veto).toFixed(2)}%</span>
-                </div>
-
-                {/* ABSTAIN */}
-                <div className="flex items-center gap-3">
-                  <span className="w-4 h-4 rounded bg-yellow-400" />
-                  <span className="flex-1 text-gray-900">Abstain</span>
-                  <span className="text-gray-500">{pct(abstain).toFixed(2)}%</span>
-                </div>
+                ))}
               </div>
             )
           })()}
@@ -314,19 +299,18 @@ export function GovernanceDetail({ proposalId }: { proposalId: string }) {
       </div>
 
       {/* Tabs */}
-      <div className="mt-1 sm:mt-2 flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="mt-5 mb-5 inline-flex items-center gap-1 p-1 rounded-xl bg-white/[0.03] border border-white/[0.06]">
         {['details', 'vote', 'json'].map((t) => (
           <button
             key={t}
             onClick={() => setTab(t as 'details' | 'vote' | 'json')}
-            className={[
-              'whitespace-nowrap shrink-0 px-4 py-2 text-sm rounded-md border transition-colors',
+            className={`shrink-0 whitespace-nowrap text-[13px] font-medium px-4 h-8 rounded-lg transition-all duration-200 ease-out-expo ${
               tab === t
-                ? 'border-gray-900 text-gray-900'
-                : 'border-gray-300 text-gray-500',
-            ].join(' ')}
+                ? 'bg-white/[0.08] text-slate-50 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]'
+                : 'text-slate-400 hover:text-slate-100'
+            }`}
           >
-            {t.toUpperCase()}
+            {t === 'json' ? 'JSON' : t.charAt(0).toUpperCase() + t.slice(1)}
           </button>
         ))}
       </div>
@@ -335,17 +319,15 @@ export function GovernanceDetail({ proposalId }: { proposalId: string }) {
       {tab === 'details' && (
         <div className="space-y-6">
           {/* Description */}
-          <section className="bg-white border rounded-lg p-5 sm:p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <h3 className="text-sm font-semibold text-gray-500 tracking-wide uppercase">Description</h3>
-            </div>
+          <section className="surface p-5 sm:p-6">
+            <h3 className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-500 mb-3">Description</h3>
 
             {proposal.summary ? (
-              <p className="text-gray-700 text-sm sm:text-base leading-relaxed mb-4">
+              <p className="text-slate-200 text-sm sm:text-[15px] leading-relaxed mb-4">
                 {proposal.summary}
               </p>
             ) : (
-              <p className="text-gray-400 text-sm italic mb-4">No description provided.</p>
+              <p className="text-slate-500 text-sm italic mb-4">No description provided.</p>
             )}
 
             {proposal.metadata && proposal.metadata.trim() && (
@@ -353,22 +335,19 @@ export function GovernanceDetail({ proposalId }: { proposalId: string }) {
                 href={proposal.metadata.trim()}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-blue-300 text-blue-600 hover:bg-blue-50 transition text-sm font-medium"
+                className="btn-secondary"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
                 </svg>
-                View Related Documentation
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                </svg>
+                View related documentation
               </a>
             )}
           </section>
 
           {/* Messages / Diff */}
           {((Array.isArray(diff_params) && diff_params.length > 0) || updateMsgs.length > 0 || otherMsgs.length > 0) && (
-            <section className="bg-white border rounded-lg p-4 sm:p-6 space-y-6">
+            <section className="surface p-4 sm:p-6 space-y-6">
               {Array.isArray(diff_params) && diff_params.length > 0 ? (
                 diff_params.map((msg, i) => (
                   <MessageBlock key={`diff-${i}`} msg={msg} />
@@ -395,7 +374,7 @@ export function GovernanceDetail({ proposalId }: { proposalId: string }) {
 
       {/* Vote */}
       {tab === 'vote' && txData && (
-        <section className="bg-white border rounded-lg p-4 sm:p-6 space-y-6">
+        <section className="surface p-4 sm:p-6 space-y-6">
           {(() => {
             const rawVoteTxs: VoteTx[] = txData.vote?.txs ?? []
             const voteTxs: VoteTx[] = dedupeLatestVotesByVoter(rawVoteTxs)
@@ -466,7 +445,7 @@ export function GovernanceDetail({ proposalId }: { proposalId: string }) {
 
             if (voteTxs.length === 0) {
               return (
-                <div className="h-full flex items-center justify-center text-gray-400">No vote data</div>
+                <div className="h-full flex items-center justify-center text-slate-500">No vote data</div>
               )
             }
 
@@ -520,12 +499,12 @@ export function GovernanceDetail({ proposalId }: { proposalId: string }) {
               <>
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
                   {/* Vote Distribution */}
-                  <div className="bg-[#1f2a44] rounded-xl p-4 sm:p-6 h-[320px] sm:h-[420px] overflow-hidden">
-                    <h4 className="text-center text-sm sm:text-base text-gray-200 font-semibold mb-3 shrink-0">Vote Distribution</h4>
+                  <div className="surface-inset p-4 sm:p-6 h-[320px] sm:h-[420px] overflow-hidden">
+                    <h4 className="text-center text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-500 mb-3 shrink-0">Vote Distribution</h4>
 
                     <div className="flex-1 flex items-center justify-center">
                       {bubbleData.length === 0 ? (
-                        <div className="text-gray-400">No votes</div>
+                        <div className="text-slate-500">No votes</div>
                       ) : (
                         <VoteBubblePack
                           data={bubbleData}
@@ -537,8 +516,8 @@ export function GovernanceDetail({ proposalId }: { proposalId: string }) {
                   </div>
 
                   {/* Voting Power Timeline */}
-                  <div className="bg-[#1f2a44] rounded-xl p-4 sm:p-6 h-[320px] sm:h-[420px] flex flex-col">
-                    <h4 className="text-center text-sm sm:text-base text-gray-200 font-semibold mb-4 shrink-0">Voting Power Timeline</h4>
+                  <div className="surface-inset p-4 sm:p-6 h-[320px] sm:h-[420px] flex flex-col">
+                    <h4 className="text-center text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-500 mb-4 shrink-0">Voting Power Timeline</h4>
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={data}>
                         <XAxis
@@ -550,60 +529,45 @@ export function GovernanceDetail({ proposalId }: { proposalId: string }) {
                             const d = new Date(v)
                             return `${d.getHours()}:00`
                           }}
-                          stroke="#9ca3af"
+                          stroke="rgba(255,255,255,0.20)"
+                          tick={{ fontSize: 11, fill: 'rgb(125,134,150)' }}
+                          tickLine={false}
+                          axisLine={{ stroke: 'rgba(255,255,255,0.06)' }}
                           tickMargin={10}
                         />
 
                         <YAxis
-                          stroke="#94a3b8"
+                          stroke="rgba(255,255,255,0.20)"
+                          tick={{ fontSize: 11, fill: 'rgb(125,134,150)' }}
+                          tickLine={false}
+                          axisLine={false}
                           tickFormatter={(v) => Number(v).toLocaleString()}
                           width={80}
                         />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Legend />
+                        <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(62,229,177,0.3)', strokeDasharray: '2 2' }} />
+                        <Legend wrapperStyle={{ fontSize: '11px', color: 'rgb(165,173,187)' }} />
 
-                        <Line
-                          type="stepAfter"
-                          dataKey="YES"
-                          stroke="#34d399"
-                          dot={false}
-                        />
-                        <Line
-                          type="stepAfter"
-                          dataKey="NO"
-                          stroke="#f87171"
-                          dot={false}
-                        />
-                        <Line
-                          type="stepAfter"
-                          dataKey="VETO"
-                          stroke="#fbbf24"
-                          dot={false}
-                        />
-                        <Line
-                          type="stepAfter"
-                          dataKey="ABSTAIN"
-                          stroke="#38bdf8"
-                          dot={false}
-                        />
+                        <Line type="stepAfter" dataKey="YES" stroke="#3ee5b1" strokeWidth={2} dot={false} />
+                        <Line type="stepAfter" dataKey="NO" stroke="#f87171" strokeWidth={2} dot={false} />
+                        <Line type="stepAfter" dataKey="VETO" stroke="#c084fc" strokeWidth={2} dot={false} />
+                        <Line type="stepAfter" dataKey="ABSTAIN" stroke="#fbbf24" strokeWidth={2} dot={false} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
 
-                <div className="bg-white rounded-lg border px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="surface px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="flex flex-wrap gap-2 sm:gap-3">
                     {(['ALL', 'YES', 'NO', 'VETO', 'ABSTAIN'] as const).map(
                       (f) => (
                         <button
                           key={f}
                           onClick={() => setVoteFilter(f)}
-                          className={[
-                            'px-4 py-2 text-sm rounded-full font-medium transition whitespace-nowrap',
+                          className={`shrink-0 whitespace-nowrap px-3.5 h-8 text-[13px] rounded-lg font-medium transition-all duration-200 ease-out-expo ${
                             voteFilter === f
-                              ? 'bg-indigo-600 text-white shadow'
-                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
-                          ].join(' ')}
+                              ? 'bg-white/[0.08] text-slate-50 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] border border-white/[0.10]'
+                              : 'text-slate-400 hover:text-slate-100 border border-transparent'
+                          }`}
                         >
                           {f}
                         </button>
@@ -615,43 +579,38 @@ export function GovernanceDetail({ proposalId }: { proposalId: string }) {
                     value={voterKeyword}
                     onChange={(e) => setVoterKeyword(e.target.value)}
                     placeholder="Search voter…"
-                    className="border rounded-md px-3 py-2 text-sm w-full sm:w-64"
+                    className="input w-full sm:w-64"
                   />
                 </div>
 
                 {/* vote table */}
-                <div className="border rounded-lg overflow-hidden overflow-x-auto">
-                  <div className="grid min-w-[720px] grid-cols-[3fr_1fr_1fr_1fr] bg-gray-50 px-4 py-3 text-xs font-semibold text-gray-600">
-                    <div>VOTER</div>
-                    <div>OPTION</div>
+                <div className="rounded-xl overflow-hidden overflow-x-auto border border-white/[0.06]">
+                  <div className="grid min-w-[720px] grid-cols-[3fr_1fr_1fr_1fr] bg-white/[0.02] px-4 py-3 text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em]">
+                    <div>Voter</div>
+                    <div>Option</div>
                     <button
                       onClick={() => {
                         setSortKey('height')
                         setSortOrder((o) => (o === 'desc' ? 'asc' : 'desc'))
                       }}
-                      className="text-left hover:underline"
+                      className="text-left hover:text-slate-200 transition-colors inline-flex items-center gap-1"
                     >
-                      HEIGHT{' '}
-                      {sortKey === 'height'
-                        ? sortOrder === 'desc'
-                          ? '↓'
-                          : '↑'
-                        : ''}
+                      Height
+                      {sortKey === 'height' && (
+                        <span className="text-accent-400">{sortOrder === 'desc' ? '↓' : '↑'}</span>
+                      )}
                     </button>
-
                     <button
                       onClick={() => {
                         setSortKey('weight')
                         setSortOrder((o) => (o === 'desc' ? 'asc' : 'desc'))
                       }}
-                      className="text-left hover:underline"
+                      className="text-left hover:text-slate-200 transition-colors inline-flex items-center gap-1"
                     >
-                      POWER{' '}
-                      {sortKey === 'weight'
-                        ? sortOrder === 'desc'
-                          ? '↓'
-                          : '↑'
-                        : ''}
+                      Power
+                      {sortKey === 'weight' && (
+                        <span className="text-accent-400">{sortOrder === 'desc' ? '↓' : '↑'}</span>
+                      )}
                     </button>
                   </div>
 
@@ -662,17 +621,17 @@ export function GovernanceDetail({ proposalId }: { proposalId: string }) {
                     return (
                       <div
                         key={tx.txhash}
-                        className="grid min-w-[720px] grid-cols-[3fr_1fr_1fr_1fr] px-4 py-3 border-t text-sm hover:bg-gray-50 transition-colors"
+                        className="grid min-w-[720px] grid-cols-[3fr_1fr_1fr_1fr] px-4 py-3.5 border-t border-white/[0.05] text-sm hover:bg-white/[0.03] transition-colors"
                       >
-                        <div className="font-mono truncate pr-4">{msg?.voter || '-'}</div>
-                        <div className="font-semibold" style={{ color: VOTE_COLOR_MAP[option] }}>{option}</div>
-                        <div>{formatInt(tx.height)}</div>
-                        <div className="font-mono truncate pr-2">{formatInt(getVoteWeight(tx))}</div>
+                        <div className="font-mono text-slate-100 truncate pr-4">{msg?.voter || '—'}</div>
+                        <div className="font-semibold tabular-nums" style={{ color: VOTE_COLOR_MAP[option] }}>{option}</div>
+                        <div className="text-slate-300 tabular-nums">{formatInt(tx.height)}</div>
+                        <div className="font-mono text-slate-200 truncate pr-2 tabular-nums">{formatInt(getVoteWeight(tx))}</div>
                       </div>
                     )
                   })}
                   {filteredVotes.length === 0 && (
-                    <div className="py-6 px-4 text-center text-sm text-gray-500">No votes found in this category</div>
+                    <div className="py-8 px-4 text-center text-sm text-slate-500">No votes found in this category</div>
                   )}
                 </div>
               </>

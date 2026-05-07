@@ -8,14 +8,20 @@ interface StatCardProps {
 }
 
 export function StatCard({ label, children, valueClassName, size = 'sm' }: StatCardProps) {
-  const sizeClass = size === 'lg'
-    ? 'text-xl sm:text-2xl'
-    : 'text-base sm:text-lg'
+  const sizeClass = size === 'lg' ? 'text-xl sm:text-2xl' : 'text-base sm:text-lg'
 
   return (
-    <div className="bg-gray-50 p-4 rounded">
-      <div className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{label}</div>
-      <div className={`mt-1 ${sizeClass} font-semibold break-words ${valueClassName || 'text-gray-900'}`}>{children}</div>
+    <div className="surface-inset p-4">
+      <div className="block text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em] mb-2">
+        {label}
+      </div>
+      <div
+        className={`mt-1 ${sizeClass} font-semibold tabular-nums break-words tracking-tight ${
+          valueClassName || 'text-slate-50'
+        }`}
+      >
+        {children}
+      </div>
     </div>
   )
 }

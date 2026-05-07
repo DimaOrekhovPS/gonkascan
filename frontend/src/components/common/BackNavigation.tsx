@@ -12,21 +12,31 @@ export function BackNavigation({ onBack, backLabel, title, badge }: BackNavigati
     <nav className="min-w-0">
       <button
         onClick={onBack}
-        className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 transition mb-2"
+        className="group inline-flex items-center gap-1.5 text-[13px] font-medium text-slate-400 hover:text-slate-100 transition-colors mb-3"
       >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <svg
+          className="w-3.5 h-3.5 transition-transform duration-200 group-hover:-translate-x-0.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.4"
+          viewBox="0 0 24 24"
+        >
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
         </svg>
         {backLabel}
       </button>
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-lg sm:text-xl font-semibold text-gray-900 break-all">{title}</span>
+        <span className="text-lg sm:text-xl font-bold text-slate-50 break-all tracking-tight">
+          {title}
+        </span>
         {badge && (
-          <span className={`shrink-0 inline-block px-3 py-1 text-sm font-semibold rounded-md ${
-            badge.color === 'blue'
-              ? 'bg-blue-100 text-blue-700'
-              : 'bg-orange-100 text-orange-700'
-          }`}>
+          <span
+            className={`shrink-0 inline-flex items-center px-2.5 py-1 text-[11px] font-semibold rounded-md tracking-wide ${
+              badge.color === 'blue'
+                ? 'bg-sky-500/10 text-sky-300 border border-sky-400/25'
+                : 'bg-orange-500/10 text-orange-300 border border-orange-400/25'
+            }`}
+          >
             {badge.label}
           </span>
         )}

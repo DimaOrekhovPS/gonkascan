@@ -177,18 +177,18 @@ export function ProposalMetadata({ metadata, summary }: ProposalMetadataProps) {
   if (!data) return null
 
   return (
-    <section className="bg-white border rounded-lg p-4 sm:p-6 space-y-4">
+    <section className="surface p-4 sm:p-6 space-y-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-base font-semibold text-gray-900">METADATA</h3>
+          <h3 className="text-base font-semibold text-slate-50">METADATA</h3>
 
           {data.from === 'summary' && (
-            <span className="text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-600">summary</span>
+            <span className="inline-flex items-center text-[11px] px-2 py-0.5 rounded-md bg-white/[0.05] text-slate-300 border border-white/[0.08] font-semibold tracking-wide">summary</span>
           )}
 
           {data.source === 'commit' && (
-            <span className="text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-700">commit</span>
+            <span className="inline-flex items-center text-[11px] px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-400/25 font-semibold tracking-wide">commit</span>
           )}
         </div>
 
@@ -196,7 +196,7 @@ export function ProposalMetadata({ metadata, summary }: ProposalMetadataProps) {
           href={data.blob}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-sm text-blue-600 hover:underline break-all"
+          className="text-sm text-accent-300 hover:underline break-all"
         >
           Open original ↗
         </a>

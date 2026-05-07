@@ -11,7 +11,7 @@ export function LoadMoreBar({ loaded, total, loading, label = 'Transactions', on
 
   if (!hasMore) {
     return (
-      <div className="mt-3 py-3 text-center text-xs text-gray-400 bg-gray-50 border border-gray-200 rounded-lg">
+      <div className="mt-3 py-3 text-center text-xs text-slate-500 bg-white/[0.02] border border-white/[0.06] rounded-lg">
         All {total.toLocaleString()} {label.toLowerCase()} loaded
       </div>
     )
@@ -21,7 +21,7 @@ export function LoadMoreBar({ loaded, total, loading, label = 'Transactions', on
     <button
       onClick={onLoadMore}
       disabled={loading}
-      className="w-full mt-3 py-3 text-center text-sm font-medium text-blue-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-60 cursor-pointer"
+      className="w-full mt-3 py-3 text-center text-sm font-medium text-accent-300 bg-white/[0.02] border border-white/[0.06] rounded-lg hover:bg-white/[0.04] transition-colors disabled:opacity-60 cursor-pointer"
     >
       {loading ? (
         'Loading...'

@@ -4,15 +4,26 @@ interface StatItemProps {
   label: string
   children: ReactNode
   subText?: ReactNode
+  accent?: boolean
 }
 
-export function StatItem({ label, children, subText }: StatItemProps) {
+export function StatItem({ label, children, subText, accent }: StatItemProps) {
   return (
     <div>
-      <div className="text-sm font-medium text-gray-500 mb-1 leading-tight">{label}</div>
-      <div className="text-xl sm:text-2xl font-bold text-gray-900 leading-none">{children}</div>
+      <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-500 mb-2 leading-tight">
+        {label}
+      </div>
+      <div
+        className={`text-lg sm:text-xl font-bold leading-none tabular-nums tracking-tight ${
+          accent ? 'text-accent-400' : 'text-slate-50'
+        }`}
+      >
+        {children}
+      </div>
       {subText !== undefined && (
-        <div className="text-xs text-gray-500 mt-1 min-h-[1.25rem]">{subText}</div>
+        <div className="text-[11.5px] text-slate-500 mt-2 min-h-[1.25rem] leading-relaxed">
+          {subText}
+        </div>
       )}
     </div>
   )

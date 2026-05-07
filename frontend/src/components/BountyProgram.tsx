@@ -60,7 +60,7 @@ function resolveDiscordUrl(displayName: string): string | null {
 }
 
 // --- Shared link style ---
-const linkClass = 'text-gray-900 hover:text-blue-600 underline decoration-gray-300 hover:decoration-blue-600 underline-offset-2'
+const linkClass = 'text-slate-50 hover:text-accent-300 underline decoration-gray-300 hover:decoration-blue-600 underline-offset-2'
 
 // --- Contributor field parsing ---
 // Fields use format: DisplayName["url_or_id"]
@@ -105,14 +105,14 @@ export function BountyProgram() {
       <BackNavigation onBack={handleBack} backLabel="Resource" title="Bounty Program"/>
 
       {/* Discord Community */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <h3 className="text-base font-semibold text-gray-900 mb-4">Discord community</h3>
+      <div className="surface p-6">
+        <h3 className="text-base font-semibold text-slate-50 mb-4">Discord community</h3>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <img src="/gonka.svg" alt="Gonka" className="w-10 h-10 rounded-full shrink-0" />
             <div>
-              <div className="text-sm font-semibold text-gray-900">Gonka Official</div>
-              <div className="text-xs text-gray-500">
+              <div className="text-sm font-semibold text-slate-50">Gonka Official</div>
+              <div className="text-xs text-slate-400">
                 Live: {discordStats.online?.toLocaleString() ?? '...'} &bull;&nbsp;
                 Total: {discordStats.total?.toLocaleString() ?? '...'}
               </div>
@@ -127,7 +127,7 @@ export function BountyProgram() {
             Join
           </a>
         </div>
-        <p className="text-sm text-gray-500 mt-4">
+        <p className="text-sm text-slate-400 mt-4">
           Join our Discord community to get the latest bounty program updates, technical support, and connect with other developers.
         </p>
       </div>
@@ -144,10 +144,10 @@ export function BountyProgram() {
       {activeTab === 'records' ? (
         <div className="space-y-6">
           {REWARD_DATA.map((group, gi) => (
-            <div key={gi} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-              <div className="bg-gray-50 border-b border-gray-200 px-5 py-3">
-                <div className="font-semibold text-gray-900">{group.title}</div>
-                <div className="text-xs text-gray-500 mt-0.5">{group.time}</div>
+            <div key={gi} className="surface overflow-hidden">
+              <div className="bg-white/[0.02] border-b border-white/[0.06] px-5 py-3">
+                <div className="font-semibold text-slate-50">{group.title}</div>
+                <div className="text-xs text-slate-400 mt-0.5">{group.time}</div>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm min-w-[860px]">
@@ -159,33 +159,33 @@ export function BountyProgram() {
                     <col className="w-[16%]" />
                   </colgroup>
                   <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-2.5 px-4 font-medium text-gray-600">Address</th>
-                      <th className="text-right py-2.5 px-4 font-medium text-gray-600">Amount (GNK)</th>
-                      <th className="text-left py-2.5 px-4 font-medium text-gray-600">GitHub</th>
-                      <th className="text-left py-2.5 px-4 font-medium text-gray-600">Task</th>
-                      <th className="text-left py-2.5 px-4 font-medium text-gray-600">Discord</th>
+                    <tr className="border-b border-white/[0.06]">
+                      <th className="text-left py-2.5 px-4 font-medium text-slate-300">Address</th>
+                      <th className="text-right py-2.5 px-4 font-medium text-slate-300">Amount (GNK)</th>
+                      <th className="text-left py-2.5 px-4 font-medium text-slate-300">GitHub</th>
+                      <th className="text-left py-2.5 px-4 font-medium text-slate-300">Task</th>
+                      <th className="text-left py-2.5 px-4 font-medium text-slate-300">Discord</th>
                     </tr>
                   </thead>
                   <tbody>
                     {group.records.map((r, ri) => {
                       const discordUrl = r.discord ? resolveDiscordUrl(r.discord) : null
                       return (
-                        <tr key={ri} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 align-top">
+                        <tr key={ri} className="border-b border-white/[0.05] last:border-0 hover:bg-white/[0.02] align-top">
                           <td className="py-2.5 px-4">
                             {r.address ? (
                               <a
                                 href={`?page=address&address=${r.address}`}
-                                className="text-blue-600 hover:text-blue-800 font-mono text-xs"
+                                className="text-accent-300 hover:text-accent-200 font-mono text-xs"
                                 title={r.address}
                               >
                                 {truncateAddress(r.address)}
                               </a>
                             ) : (
-                              <span className="text-gray-400">-</span>
+                              <span className="text-slate-500">-</span>
                             )}
                           </td>
-                          <td className="py-2.5 px-4 text-right font-mono text-gray-900 whitespace-nowrap">
+                          <td className="py-2.5 px-4 text-right font-mono text-slate-50 whitespace-nowrap">
                             {r.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
                           <td className="py-2.5 px-4">
@@ -203,7 +203,7 @@ export function BountyProgram() {
                                         {name}
                                         <GitHubSmallIcon />
                                       </a>
-                                      {i < arr.length - 1 && <span className="text-gray-400">,</span>}
+                                      {i < arr.length - 1 && <span className="text-slate-500">,</span>}
                                     </span>
                                   ))}
                                 </span>
@@ -219,17 +219,17 @@ export function BountyProgram() {
                                 </a>
                               )
                             ) : (
-                              <span className="text-gray-400">-</span>
+                              <span className="text-slate-500">-</span>
                             )}
                           </td>
-                          <td className="py-2.5 px-4 text-gray-600 break-words">
+                          <td className="py-2.5 px-4 text-slate-300 break-words">
                             {r.task ? (
                               r.taskUrl ? (
                                 <a
                                   href={r.taskUrl}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-gray-600 hover:text-blue-600 underline decoration-gray-300 hover:decoration-blue-600 underline-offset-2"
+                                  className="text-slate-300 hover:text-accent-300 underline decoration-gray-300 hover:decoration-blue-600 underline-offset-2"
                                 >
                                   {r.task}<ExternalLinkIcon />
                                 </a>
@@ -237,7 +237,7 @@ export function BountyProgram() {
                                 <span>{r.task}</span>
                               )
                             ) : (
-                              <span className="text-gray-400">-</span>
+                              <span className="text-slate-500">-</span>
                             )}
                           </td>
                           <td className="py-2.5 px-4">
@@ -248,10 +248,10 @@ export function BountyProgram() {
                                   <DiscordSmallIcon />
                                 </a>
                               ) : (
-                                <span className="text-gray-900">{r.discord}</span>
+                                <span className="text-slate-50">{r.discord}</span>
                               )
                             ) : (
-                              <span className="text-gray-400">-</span>
+                              <span className="text-slate-500">-</span>
                             )}
                           </td>
                         </tr>
@@ -264,7 +264,7 @@ export function BountyProgram() {
           ))}
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="surface overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[600px]">
               <colgroup>
@@ -274,11 +274,11 @@ export function BountyProgram() {
                 <col className="w-[30%]" />
               </colgroup>
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">#</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">Github / Name</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">Discord</th>
-                  <th className="text-center py-3 px-4 font-medium text-gray-600">Amount (GNK)</th>
+                <tr className="bg-white/[0.02] border-b border-white/[0.06]">
+                  <th className="text-left py-3 px-4 font-medium text-slate-300">#</th>
+                  <th className="text-left py-3 px-4 font-medium text-slate-300">Github / Name</th>
+                  <th className="text-left py-3 px-4 font-medium text-slate-300">Discord</th>
+                  <th className="text-center py-3 px-4 font-medium text-slate-300">Amount (GNK)</th>
                 </tr>
               </thead>
               <tbody>
@@ -286,26 +286,26 @@ export function BountyProgram() {
                   const ghEntries = c.github ? parseGithubEntries(c.github) : []
                   const dc = c.discord ? parseDiscordField(c.discord) : null
                   return (
-                    <tr key={i} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
-                      <td className="py-2.5 px-4 text-gray-400">{i + 1}</td>
+                    <tr key={i} className="border-b border-white/[0.05] last:border-0 hover:bg-white/[0.02]">
+                      <td className="py-2.5 px-4 text-slate-500">{i + 1}</td>
                       <td className="py-2.5 px-4 font-medium">
                         {ghEntries.length > 0 ? (
                           <span className="inline-flex flex-wrap items-center gap-x-1">
-                            {c.name && <span className="text-gray-900">{c.name} </span>}
+                            {c.name && <span className="text-slate-50">{c.name} </span>}
                             {ghEntries.map((gh, gi) => (
                               <span key={gi} className="inline-flex items-center">
                                 <a href={gh.url} target="_blank" rel="noopener noreferrer" className={linkClass}>
                                   {gh.display}
                                   <GitHubSmallIcon />
                                 </a>
-                                {gi < ghEntries.length - 1 && <span className="text-gray-400">,</span>}
+                                {gi < ghEntries.length - 1 && <span className="text-slate-500">,</span>}
                               </span>
                             ))}
                           </span>
                         ) : c.name ? (
-                          <span className="text-gray-900">{c.name}</span>
+                          <span className="text-slate-50">{c.name}</span>
                         ) : (
-                          <span className="text-gray-400">-</span>
+                          <span className="text-slate-500">-</span>
                         )}
                       </td>
                       <td className="py-2.5 px-4 font-medium">
@@ -316,13 +316,13 @@ export function BountyProgram() {
                               <DiscordSmallIcon />
                             </a>
                           ) : (
-                            <span className="text-gray-900">{dc.display}</span>
+                            <span className="text-slate-50">{dc.display}</span>
                           )
                         ) : (
-                          <span className="text-gray-400">-</span>
+                          <span className="text-slate-500">-</span>
                         )}
                       </td>
-                      <td className="py-2.5 px-4 text-center text-gray-900 font-mono">
+                      <td className="py-2.5 px-4 text-center text-slate-50 font-mono">
                         {c.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                     </tr>
@@ -330,10 +330,10 @@ export function BountyProgram() {
                 })}
               </tbody>
               <tfoot>
-                <tr className="bg-gray-50 border-t border-gray-200">
+                <tr className="bg-white/[0.02] border-t border-white/[0.06]">
                   <td className="py-3 px-4" />
-                  <td className="py-3 px-4 font-semibold text-gray-900" colSpan={2}>Total Distributed</td>
-                  <td className="py-3 px-4 text-center font-semibold text-gray-900 font-mono">
+                  <td className="py-3 px-4 font-semibold text-slate-50" colSpan={2}>Total Distributed</td>
+                  <td className="py-3 px-4 text-center font-semibold text-slate-50 font-mono">
                     {totalDistributed.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                 </tr>

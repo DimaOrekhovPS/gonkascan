@@ -45,45 +45,54 @@ function ProposalCard({
   const totalVotes = yes + no + abstain + veto
 
   const votes = [
-    { key: 'yes', label: 'Yes', value: yes, color: 'bg-green-500', text: 'text-green-600' },
-    { key: 'no', label: 'No', value: no, color: 'bg-red-500', text: 'text-red-500' },
-    { key: 'abstain', label: 'Abstain', value: abstain, color: 'bg-purple-500', text: 'text-purple-500' },
-    { key: 'veto', label: 'Veto', value: veto, color: 'bg-gray-400', text: 'text-gray-400' },
+    { key: 'yes', label: 'Yes', value: yes, color: 'bg-accent-400', text: 'text-accent-300' },
+    { key: 'no', label: 'No', value: no, color: 'bg-red-400', text: 'text-red-300' },
+    { key: 'abstain', label: 'Abstain', value: abstain, color: 'bg-violet-400', text: 'text-violet-300' },
+    { key: 'veto', label: 'Veto', value: veto, color: 'bg-slate-500', text: 'text-slate-400' },
   ].filter((v) => v.value > 0)
 
   return (
     <div
       onClick={onClick}
-      className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+      className="group relative surface-inset px-4 py-3.5 cursor-pointer transition-all duration-300 ease-out-expo
+        hover:bg-white/[0.04] hover:border-white/[0.10] hover:-translate-y-0.5"
     >
-      {/* Row 1: #id + title + voters + countdown */}
+      <span
+        className="absolute left-0 top-3 bottom-3 w-[2px] rounded-r-full bg-accent-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-[0_0_8px_rgba(62,229,177,0.5)]"
+        aria-hidden
+      />
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2">
-        <span className="shrink-0 text-xs font-semibold text-gray-900">#{proposal.id}</span>
-        <h3 className="font-semibold text-gray-900 text-sm truncate min-w-0 flex-1 sm:flex-none">{proposal.title}</h3>
-        <span className="shrink-0 text-xs text-gray-400">Voters {proposal.total_voters}/{proposal.total_participants}</span>
+        <span className="shrink-0 inline-flex items-center justify-center min-w-[28px] h-5 px-1.5 rounded-md text-[10px] font-bold tabular-nums bg-white/[0.06] text-slate-300 border border-white/[0.08]">
+          #{proposal.id}
+        </span>
+        <h3 className="font-semibold text-slate-100 text-sm truncate min-w-0 flex-1 sm:flex-none group-hover:text-accent-300 transition-colors">
+          {proposal.title}
+        </h3>
+        <span className="shrink-0 text-xs text-slate-500 tabular-nums">
+          Voters {proposal.total_voters}/{proposal.total_participants}
+        </span>
         {countdown && (
-          <span className="shrink-0 sm:ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+          <span className="shrink-0 sm:ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-300 border border-amber-400/25 tabular-nums">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
             {countdown}
           </span>
         )}
       </div>
 
-      {/* Row 2: Vote labels + vote bar */}
       {totalVotes > 0 && (
         <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3">
           <div className="flex items-center gap-2 shrink-0">
             {votes.map((v) => (
-              <span key={v.key} className={`${v.text} text-[11px] whitespace-nowrap`}>
+              <span key={v.key} className={`${v.text} text-[11px] font-medium tabular-nums whitespace-nowrap`}>
                 {v.label} {((v.value / totalVotes) * 100).toFixed(1)}%
               </span>
             ))}
           </div>
-          <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden flex">
+          <div className="flex-1 h-1.5 bg-white/[0.04] rounded-full overflow-hidden flex">
             {votes.map((v) => (
               <div
                 key={v.key}
-                className={`${v.color} h-full`}
+                className={`${v.color} h-full transition-all duration-500 ease-out-expo`}
                 style={{ width: `${(v.value / totalVotes) * 100}%` }}
               />
             ))}
@@ -129,32 +138,42 @@ export function ActiveProposals() {
   const hasHidden = !showAll && filtered.length < votingProposals.length
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-6 border border-gray-200">
-      {/* Header: title + count on same line */}
-      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+    <section className="surface p-4 sm:p-5 md:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <h2 className="text-lg font-bold text-gray-900">Active Proposals</h2>
-          <span className="text-sm text-gray-400">
-            {votingProposals.length} proposal{votingProposals.length > 1 ? 's' : ''} currently in voting
+          <h2 className="section-title flex items-center gap-2.5">
+            <span className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-amber-500/10 border border-amber-400/25">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse shadow-[0_0_6px_rgba(251,191,36,0.5)]" />
+            </span>
+            Active Proposals
+          </h2>
+          <span className="text-xs sm:text-sm text-slate-500 tabular-nums">
+            {votingProposals.length} {votingProposals.length === 1 ? 'proposal' : 'proposals'} currently in voting
           </span>
         </div>
         {hasHidden && (
-          <button onClick={() => setShowAll(true)} className="text-sm text-blue-600 hover:underline">
-            Show all ({votingProposals.length})
+          <button
+            onClick={() => setShowAll(true)}
+            className="text-sm font-medium text-accent-300 hover:text-accent-200 transition-colors"
+          >
+            Show all ({votingProposals.length}) →
           </button>
         )}
         {showAll && votingProposals.length > 1 && (
-          <button onClick={() => setShowAll(false)} className="text-sm text-blue-600 hover:underline">
+          <button
+            onClick={() => setShowAll(false)}
+            className="text-sm font-medium text-accent-300 hover:text-accent-200 transition-colors"
+          >
             Show significant only
           </button>
         )}
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {filtered.map((p) => (
           <ProposalCard key={p.id} proposal={p} onClick={() => handleClick(p.id)} />
         ))}
       </div>
-    </div>
+    </section>
   )
 }

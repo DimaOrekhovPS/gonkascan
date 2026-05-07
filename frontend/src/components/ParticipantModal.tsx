@@ -108,9 +108,9 @@ export function ParticipantModal({ participantId, epochId, currentEpochId }: Par
 
   return (
     <div className="w-full max-w-[1440px] mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-5 md:py-6">
-      <div className="bg-white rounded-lg shadow-sm">
+      <div className="surface">
 
-        <div className="border-b border-gray-200 px-3 sm:px-4 md:px-6 py-3 sm:py-4">
+        <div className="border-b border-white/[0.06] px-3 sm:px-4 md:px-6 py-3 sm:py-4">
           <BackNavigation onBack={handleBack} backLabel="Dashboard" title={participant.index} badge={{ label: 'Participant', color: 'orange' }} />
         </div>
 
@@ -135,7 +135,7 @@ export function ParticipantModal({ participantId, epochId, currentEpochId }: Par
           <div className="px-3 sm:px-4 md:px-6 py-4 space-y-6">
             {vestingEpochData.length > 0 && (
               <div>
-                <div className="text-sm font-semibold text-gray-700">Next 180 Epochs Vesting Release</div>
+                <div className="text-sm font-semibold text-slate-200">Next 180 Epochs Vesting Release</div>
                 <div className="w-full h-[220px] sm:h-[260px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={vestingEpochData} barCategoryGap={1} margin={{top: 10, right: 10, bottom: 0, left: 0}}>
@@ -151,44 +151,44 @@ export function ParticipantModal({ participantId, epochId, currentEpochId }: Par
           
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Participant Address</label>
-                <div className="mt-1 text-sm font-mono text-gray-900 break-all">{participant.index}</div>
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Participant Address</label>
+                <div className="mt-1 text-sm font-mono text-slate-50 break-all">{participant.index}</div>
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Consensus Key</label>
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Consensus Key</label>
                 {participant.consensus_key_mismatch ? (
                   <div className="mt-1 space-y-1">
-                    <div className="text-sm font-mono text-red-600 break-all">
+                    <div className="text-sm font-mono text-red-300 break-all">
                       <span className="font-semibold">Participant Key:</span> {participant.validator_key || '-'}
                     </div>
-                    <div className="text-sm font-mono text-red-600 break-all">
+                    <div className="text-sm font-mono text-red-300 break-all">
                       <span className="font-semibold">Validator Key:</span> {participant.validator_consensus_key || '-'}
                     </div>
-                    <div className="text-xs text-red-600 font-semibold">Key mismatch detected - potential configuration error</div>
+                    <div className="text-xs text-red-300 font-semibold">Key mismatch detected - potential configuration error</div>
                   </div>
                 ) : (
-                  <div className="mt-1 text-sm font-mono text-gray-900 break-all">
-                    {participant.validator_key || <span className="text-gray-400">Not available</span>}
+                  <div className="mt-1 text-sm font-mono text-slate-50 break-all">
+                    {participant.validator_key || <span className="text-slate-500">Not available</span>}
                   </div>
                 )}
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">URL</label>
-                <div className="mt-1 text-sm text-gray-900 break-all">
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">URL</label>
+                <div className="mt-1 text-sm text-slate-50 break-all">
                   {participant.inference_url ? (
-                    <a href={participant.inference_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                    <a href={participant.inference_url} target="_blank" rel="noopener noreferrer" className="text-accent-300 hover:underline">
                       {participant.inference_url}
                     </a>
                   ) : (
-                    <span className="text-gray-400">Not available</span>
+                    <span className="text-slate-500">Not available</span>
                   )}
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</label>
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Name</label>
                 <div className="mt-1">
                   {participant.keybase_picture_url ? (
                     <div className="flex items-center gap-2">
@@ -197,46 +197,46 @@ export function ParticipantModal({ participantId, epochId, currentEpochId }: Par
                         alt={participant.keybase_username || 'Keybase avatar'} 
                         className="w-8 h-8 rounded-full"
                       />
-                      <span className="text-sm text-gray-900">{participant.keybase_username || participant.moniker || '-'}</span>
+                      <span className="text-sm text-slate-50">{participant.keybase_username || participant.moniker || '-'}</span>
                     </div>
                   ) : (
-                    <div className="text-sm text-gray-900">{participant.moniker || '-'}</div>
+                    <div className="text-sm text-slate-50">{participant.moniker || '-'}</div>
                   )}
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Website</label>
-                <div className="mt-1 text-sm text-gray-900 break-all">
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Website</label>
+                <div className="mt-1 text-sm text-slate-50 break-all">
                   {participant.website ? (
-                    <a href={participant.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                    <a href={participant.website} target="_blank" rel="noopener noreferrer" className="text-accent-300 hover:underline">
                       {participant.website}
                     </a>
                   ) : (
-                    <span className="text-gray-400">-</span>
+                    <span className="text-slate-500">-</span>
                   )}
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Warm Keys</label>
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Warm Keys</label>
                 {detailsLoading ? (
-                  <div className="mt-1 text-sm text-gray-400">Loading...</div>
+                  <div className="mt-1 text-sm text-slate-500">Loading...</div>
                 ) : details && details.warm_keys && details.warm_keys.length > 0 ? (
                   <div className="mt-2 space-y-2">
                     {details.warm_keys.map((warmKey, idx) => (
                       <div key={idx} className="text-sm">
-                        <div className="font-mono text-gray-900 break-all">{warmKey.grantee_address}</div>
-                        <div className="text-xs text-gray-500">Granted: {formatDateTime(warmKey.granted_at)}</div>
+                        <div className="font-mono text-slate-50 break-all">{warmKey.grantee_address}</div>
+                        <div className="text-xs text-slate-400">Granted: {formatDateTime(warmKey.granted_at)}</div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="mt-1 text-sm text-gray-400">No warm keys configured</div>
+                  <div className="mt-1 text-sm text-slate-500">No warm keys configured</div>
                 )}
               </div>
             
-              <div className="border-t border-gray-200 pt-6">
+              <div className="border-t border-white/[0.06] pt-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-3 sm:gap-4">
                   <StatCard label="Weight">{participant.weight.toLocaleString()}</StatCard>
 
@@ -252,7 +252,7 @@ export function ParticipantModal({ participantId, epochId, currentEpochId }: Par
                       participant.confirmation_poc_ratio !== null &&
                     participant.confirmation_poc_ratio !== undefined &&
                     participant.confirmation_poc_ratio < 0.5
-                        ? 'text-red-600'
+                        ? 'text-red-300'
                         : undefined
                     }
                   >
@@ -265,18 +265,18 @@ export function ParticipantModal({ participantId, epochId, currentEpochId }: Par
                     <div className="flex items-center gap-2 flex-wrap">
                       {participant.node_healthy === true ? (
                         <>
-                          <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                          <span className="text-base font-medium text-gray-900">Healthy</span>
+                          <div className="w-3 h-3 bg-accent-500 rounded-full"></div>
+                          <span className="text-base font-medium text-slate-50">Healthy</span>
                         </>
                       ) : participant.node_healthy === false ? (
                         <>
-                          <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                          <span className="text-base font-medium text-gray-900">Unhealthy</span>
+                          <div className="w-3 h-3 bg-red-400 rounded-full"></div>
+                          <span className="text-base font-medium text-slate-50">Unhealthy</span>
                         </>
                       ) : (
                         <>
-                          <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
-                          <span className="text-base font-medium text-gray-400">Unknown</span>
+                          <div className="w-3 h-3 bg-white/[0.08] rounded-full"></div>
+                          <span className="text-base font-medium text-slate-500">Unknown</span>
                         </>
                       )}
                     </div>
@@ -290,7 +290,7 @@ export function ParticipantModal({ participantId, epochId, currentEpochId }: Par
                     ) : participant.is_jailed === false ? (
                       <Badge variant="green">NOT JAILED</Badge>
                     ) : (
-                      <span className="text-gray-400 text-sm">Unknown</span>
+                      <span className="text-slate-500 text-sm">Unknown</span>
                     )}
                   </StatCard>
 
@@ -300,34 +300,34 @@ export function ParticipantModal({ participantId, epochId, currentEpochId }: Par
                     ) : participant.status === 'ACTIVE' ? (
                       <Badge variant="green">ACTIVE</Badge>
                     ) : (
-                      <span className="text-gray-400 text-sm">Unknown</span>
+                      <span className="text-slate-500 text-sm">Unknown</span>
                     )}
                   </StatCard>
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Models</label>
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Models</label>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {participant.models.length > 0 ? (
                     participant.models.map((model, idx) => (
                       <Badge key={idx} variant="gray" className="py-1 font-medium">{model}</Badge>
                     ))
                   ) : (
-                    <span className="text-gray-400 text-sm">No models</span>
+                    <span className="text-slate-500 text-sm">No models</span>
                   )}
                 </div>
               </div>
             </div>
 
             {collateralStatus && (
-              <div className="border-t border-gray-200 pt-6">
-                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">Collateral Status</h3>
+              <div className="border-t border-white/[0.06] pt-6">
+                <h3 className="text-sm font-semibold text-slate-200 uppercase tracking-wider mb-4">Collateral Status</h3>
               
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
                   <StatCard label="Potential Weight">{collateralStatus.potential_weight.toLocaleString()}</StatCard>
                   <StatCard label="Effective Weight">{collateralStatus.effective_weight.toLocaleString()}</StatCard>
-                  <StatCard label="Collateral Rate" valueClassName={collateralStatus.collateral_ratio < 0.90 ? 'text-red-600' : 'text-green-500'}>
+                  <StatCard label="Collateral Rate" valueClassName={collateralStatus.collateral_ratio < 0.90 ? 'text-red-300' : 'text-accent-400'}>
                     {(collateralStatus.collateral_ratio * 100).toFixed(2)}%
                   </StatCard>
                   <StatCard label="Needed Collateral">{collateralStatus.needed_ngonka.toLocaleString()} ngonka</StatCard>
@@ -335,70 +335,66 @@ export function ParticipantModal({ participantId, epochId, currentEpochId }: Par
               </div>
             )}
 
-            <div className="border-t border-gray-200 pt-6">
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">Inference Statistics</h3>
+            <div className="border-t border-white/[0.06] pt-6">
+              <h3 className="text-sm font-semibold text-slate-200 uppercase tracking-wider mb-4">Inference Statistics</h3>
             
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-3 sm:gap-4">
                 <StatCard label="Total Inferenced">{totalInferenced.toLocaleString()}</StatCard>
-                <StatCard label="Missed Requests" valueClassName={parseInt(participant.current_epoch_stats.missed_requests) > 0 ? 'text-red-600' : undefined}>
+                <StatCard label="Missed Requests" valueClassName={parseInt(participant.current_epoch_stats.missed_requests) > 0 ? 'text-red-300' : undefined}>
                   {parseInt(participant.current_epoch_stats.missed_requests).toLocaleString()}
                 </StatCard>
                 <StatCard label="Validated Inferences">
                   {parseInt(participant.current_epoch_stats.validated_inferences).toLocaleString()}
                 </StatCard>
-                <StatCard label="Invalidated Inferences" valueClassName={parseInt(participant.current_epoch_stats.invalidated_inferences) > 0 ? 'text-red-600' : undefined}>
+                <StatCard label="Invalidated Inferences" valueClassName={parseInt(participant.current_epoch_stats.invalidated_inferences) > 0 ? 'text-red-300' : undefined}>
                   {parseInt(participant.current_epoch_stats.invalidated_inferences).toLocaleString()}
                 </StatCard>
-                <StatCard label="Missed Rate" valueClassName={participant.missed_rate > 0.10 ? 'text-red-600' : undefined}>
+                <StatCard label="Missed Rate" valueClassName={participant.missed_rate > 0.10 ? 'text-red-300' : undefined}>
                   {(participant.missed_rate * 100).toFixed(2)}%
                 </StatCard>
-                <StatCard label="Invalidation Rate" valueClassName={participant.invalidation_rate > 0.10 ? 'text-red-600' : undefined}>
+                <StatCard label="Invalidation Rate" valueClassName={participant.invalidation_rate > 0.10 ? 'text-red-300' : undefined}>
                   {(participant.invalidation_rate * 100).toFixed(2)}%
                 </StatCard>
               </div>
             </div>
 
-            <div className="border-t border-gray-200 pt-6">
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">Rewards</h3>
+            <div className="border-t border-white/[0.06] pt-6">
+              <h3 className="text-sm font-semibold text-slate-200 uppercase tracking-wider mb-4">Rewards</h3>
             
               <div className="mb-4">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Seed</label>
-                <div className="mt-1 text-xs font-mono text-gray-700 break-all bg-gray-50 p-2 rounded">
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Seed</label>
+                <div className="mt-1 text-xs font-mono text-slate-200 break-all bg-white/[0.02] p-2 rounded">
                   {detailsLoading ? (
-                    <span className="text-gray-400">Loading...</span>
+                    <span className="text-slate-500">Loading...</span>
                   ) : details?.seed ? (
                     details.seed.signature
                   ) : (
-                    <span className="text-gray-400">-</span>
+                    <span className="text-slate-500">-</span>
                   )}
                 </div>
               </div>
             
               {detailsLoading ? (
-                <div className="text-gray-400 text-sm">Loading rewards...</div>
+                <div className="text-slate-500 text-sm">Loading rewards...</div>
               ) : details && details.rewards && details.rewards.length > 0 ? (
                 <div className="overflow-x-auto">
-                  <table className="min-w-[640px] w-full divide-y divide-gray-200">
-                    <thead>
-                      <tr className="bg-gray-50">
-                        <th className="px-3 sm:px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Epoch</th>
-                        <th className="px-3 sm:px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Assigned Reward</th>
-                        <th className="px-3 sm:px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Claimed</th>
+                  <table className="min-w-[640px] w-full">
+                    <thead className="bg-white/[0.02]">
+                      <tr className="border-b border-white/[0.06]">
+                        <th className="px-4 py-3 text-left text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em] whitespace-nowrap">Epoch</th>
+                        <th className="px-4 py-3 text-right text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em] whitespace-nowrap">Assigned Reward</th>
+                        <th className="px-4 py-3 text-right text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em] whitespace-nowrap">Claimed</th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody>
                       {details.rewards.map((reward) => (
-                        <tr key={reward.epoch_id}>
-                          <td className="px-3 sm:px-4 py-2 text-sm text-gray-900 whitespace-nowrap">{reward.epoch_id}</td>
-                          <td className="px-3 sm:px-4 py-2 text-sm text-gray-900 whitespace-nowrap">
-                            {reward.assigned_reward_gnk > 0 ? `${reward.assigned_reward_gnk} GNK` : '-'}
+                        <tr key={reward.epoch_id} className="border-t border-white/[0.05] hover:bg-white/[0.03] transition-colors">
+                          <td className="px-4 py-3 text-sm font-mono text-slate-100 whitespace-nowrap tabular-nums">#{reward.epoch_id}</td>
+                          <td className="px-4 py-3 text-sm text-right text-slate-100 whitespace-nowrap tabular-nums">
+                            {reward.assigned_reward_gnk > 0 ? <>{reward.assigned_reward_gnk} <span className="text-slate-500">GNK</span></> : <span className="text-slate-600">—</span>}
                           </td>
-                          <td className="px-3 sm:px-4 py-2 text-sm whitespace-nowrap">
-                            {reward.claimed ? (
-                              <Badge variant="green">YES</Badge>
-                            ) : (
-                              <Badge variant="red">NO</Badge>
-                            )}
+                          <td className="px-4 py-3 text-sm text-right whitespace-nowrap">
+                            {reward.claimed ? <Badge variant="green">Yes</Badge> : <Badge variant="red">No</Badge>}
                           </td>
                         </tr>
                       ))}
@@ -406,17 +402,17 @@ export function ParticipantModal({ participantId, epochId, currentEpochId }: Par
                   </table>
                 </div>
               ) : (
-                <div className="text-gray-600 text-sm bg-gray-50 p-4 rounded border border-gray-200">
+                <div className="text-slate-300 text-sm surface-inset p-4 border border-white/[0.06]">
                   Rewards not available for current epoch. Check back after epoch ends.
                 </div>
               )}
             </div>
 
-            <div className="border-t border-gray-200 pt-6">
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">MLNodes</h3>
+            <div className="border-t border-white/[0.06] pt-6">
+              <h3 className="text-sm font-semibold text-slate-200 uppercase tracking-wider mb-4">MLNodes</h3>
             
               {detailsLoading ? (
-                <div className="text-gray-400 text-sm">Loading MLNodes...</div>
+                <div className="text-slate-500 text-sm">Loading MLNodes...</div>
               ) : details && details.ml_nodes && details.ml_nodes.length > 0 ? (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                   {details.ml_nodes.map((node, idx) => (
@@ -424,7 +420,7 @@ export function ParticipantModal({ participantId, epochId, currentEpochId }: Par
                   ))}
                 </div>
               ) : (
-                <div className="text-gray-400 text-sm">No MLNodes configured</div>
+                <div className="text-slate-500 text-sm">No MLNodes configured</div>
               )}
             </div>
           </div>
@@ -433,20 +429,20 @@ export function ParticipantModal({ participantId, epochId, currentEpochId }: Par
         {activeTab === 'inferences' && (
           <div className="px-3 sm:px-4 md:px-6 py-4 space-y-6">
             {(!currentEpochId || epochId < currentEpochId - 1) ? (
-              <div className="text-center py-12 text-gray-500">
+              <div className="text-center py-12 text-slate-400">
                 <p className="text-base font-medium">Data not available for older epochs</p>
-                <p className="text-sm text-gray-400 mt-2">Inference details are only available for current and previous epoch</p>
+                <p className="text-sm text-slate-500 mt-2">Inference details are only available for current and previous epoch</p>
               </div>
             ) : inferencesLoading ? (
               <LoadingScreen label="Loading inferences..." className="py-10" />
             ) : inferencesError ? (
               <ErrorScreen error={inferencesError} title="Failed to load inferences" className="py-10" />
             ) : !inferences ? (
-              <div className="text-center py-8 text-gray-400">No data available</div>
+              <div className="text-center py-8 text-slate-500">No data available</div>
             ) : !inferences.cached_at ? (
-              <div className="text-center py-12 text-gray-500">
+              <div className="text-center py-12 text-slate-400">
                 <p className="text-base font-medium">Inference data not yet available</p>
-                <p className="text-sm text-gray-400 mt-2">Backend is collecting data. Please wait a few moments and refresh.</p>
+                <p className="text-sm text-slate-500 mt-2">Backend is collecting data. Please wait a few moments and refresh.</p>
               </div>
             ) : (
               <>
@@ -472,7 +468,7 @@ export function ParticipantModal({ participantId, epochId, currentEpochId }: Par
                 />
 
                 {inferences.cached_at && (
-                  <div className="text-xs text-gray-400 text-right pt-4 border-t border-gray-200">
+                  <div className="text-xs text-slate-500 text-right pt-4 border-t border-white/[0.06]">
                     Cached at: {formatDateTime(inferences.cached_at)}
                   </div>
                 )}

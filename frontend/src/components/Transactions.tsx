@@ -18,88 +18,105 @@ export function Transactions() {
     placeholderData: (previousData) => previousData,
   })
 
-  const handleRefresh = () => {
-    refetch()
-  }
+  const handleRefresh = () => refetch()
 
-  if (isLoading && !data) {
-    return <LoadingScreen label="Loading transactions..." />
-  }
-
-  if (error && !data) {
-    return <ErrorScreen error={error} onRetry={handleRefresh} />
-  }
-
+  if (isLoading && !data) return <LoadingScreen label="Loading transactions" />
+  if (error && !data) return <ErrorScreen error={error} onRetry={handleRefresh} />
   if (!data) return null
 
+  const secondsAgo = dataUpdatedAt ? Math.floor((Date.now() - dataUpdatedAt) / 1000) : null
+
   return (
-    <div>
-      <div className="bg-white rounded-lg shadow-sm p-3 sm:p-4 md:p-6 border border-gray-200">
-        <div className="mb-4">
-          <h2 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Transactions</h2>
-          <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-            Auto-refreshing every 10s
-            {dataUpdatedAt && ` (${Math.floor((Date.now() - dataUpdatedAt) / 1000)}s ago)`}
-          </p>
+    <div className="animate-fade-in">
+      <section className="surface p-4 sm:p-5 md:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
+          <div>
+            <h2 className="section-title">Recent Transactions</h2>
+            <p className="section-subtitle mt-1 flex items-center gap-2">
+              <span className="live-dot" aria-hidden />
+              <span>
+                Auto-refresh every <span className="font-semibold text-slate-200">10s</span>
+                {secondsAgo !== null && <span className="text-slate-500"> · synced {secondsAgo}s ago</span>}
+              </span>
+            </p>
+          </div>
         </div>
 
-        <div className="overflow-x-auto border border-gray-200 rounded-md">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-[10%]">HEIGHT</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-[50%]">HASH</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-[20%]">MESSAGES</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-[20%]">TIME</th>
+        <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
+          <table className="min-w-full">
+            <thead className="bg-white/[0.02]">
+              <tr className="border-b border-white/[0.06]">
+                <th className="px-4 py-3 text-left text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em] w-[10%]">Height</th>
+                <th className="px-4 py-3 text-left text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em] w-[50%]">Hash</th>
+                <th className="px-4 py-3 text-left text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em] w-[20%]">Messages</th>
+                <th className="px-4 py-3 text-right text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em] w-[20%]">Time</th>
               </tr>
             </thead>
 
-            <tbody className="bg-white divide-y divide-gray-200">
-              {data.transactions.map((tx) => (
-                <tr
-                  key={tx.tx_hash}
-                  onClick={() => {
-                    const hash = tx.tx_hash.toUpperCase()
-                    setSelectedTxHash(hash)
-                    const params = new URLSearchParams(window.location.search)
-                    params.set('page', 'transactions')
-                    params.set('tx', hash)
-                    window.history.pushState({}, '', `?${params}`)
-                  }}    
-                  className={[
-                    'cursor-pointer',
-                    selectedTxHash === tx.tx_hash.toUpperCase()
-                      ? 'bg-blue-50 ring-1 ring-blue-200'
-                      : 'hover:bg-blue-50 hover:ring-1 hover:ring-blue-300 active:bg-blue-100',
-                  ].join(' ')}
-                >
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-center text-gray-900 w-[10%]">
-                    <a
-                      href={`?page=blocks&height=${tx.height}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="block w-full truncate text-blue-600 hover:text-blue-800 hover:underline"
-                      title={tx.height.toString()}
-                    >
-                      {tx.height}
-                    </a>
-                  </td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-center font-mono text-gray-900 w-[55%]">
-                    <div className="truncate max-w-[220px] sm:max-w-none mx-auto" title={tx.tx_hash.toUpperCase()}>{tx.tx_hash.toUpperCase()}</div>
-                  </td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-center text-gray-900 w-[15%] break-words">{tx.messages.join(', ')}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-center text-gray-900 w-[20%]">
-                    <div className="flex items-center justify-center gap-1 whitespace-nowrap">
-                      <ClockIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500" />
-                      <span>{tx.timestamp ? formatDateTime(tx.timestamp) : '-'}</span>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+            <tbody>
+              {data.transactions.map((tx) => {
+                const isSelected = selectedTxHash === tx.tx_hash.toUpperCase()
+                return (
+                  <tr
+                    key={tx.tx_hash}
+                    onClick={() => {
+                      const hash = tx.tx_hash.toUpperCase()
+                      setSelectedTxHash(hash)
+                      const params = new URLSearchParams(window.location.search)
+                      params.set('page', 'transactions')
+                      params.set('tx', hash)
+                      window.history.pushState({}, '', `?${params}`)
+                    }}
+                    className={`group cursor-pointer border-t border-white/[0.05] transition-colors duration-150 ${
+                      isSelected ? 'bg-accent-500/[0.07]' : 'hover:bg-white/[0.03]'
+                    }`}
+                  >
+                    <td className="px-4 py-3 text-sm whitespace-nowrap">
+                      <a
+                        href={`?page=blocks&height=${tx.height}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex items-center font-mono text-accent-300 hover:text-accent-200 hover:underline tabular-nums"
+                        title={tx.height.toString()}
+                      >
+                        #{tx.height}
+                      </a>
+                    </td>
+                    <td className="px-4 py-3 text-sm font-mono text-slate-200 whitespace-nowrap">
+                      <span className="inline-flex items-center gap-2">
+                        <span className="hidden sm:inline-block w-1.5 h-1.5 rounded-full bg-accent-500/60 group-hover:bg-accent-400 group-hover:shadow-[0_0_6px_rgba(62,229,177,0.6)] transition-all" aria-hidden />
+                        <span className="block max-w-[200px] sm:max-w-[420px] md:max-w-[560px] truncate" title={tx.tx_hash.toUpperCase()}>
+                          {tx.tx_hash.toUpperCase()}
+                        </span>
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-300">
+                      <div className="flex flex-wrap gap-1 max-w-[260px]">
+                        {tx.messages.slice(0, 2).map((m, i) => (
+                          <span
+                            key={i}
+                            className="inline-flex items-center px-2 py-0.5 rounded-md bg-white/[0.04] text-slate-300 border border-white/[0.06] text-[11px] font-medium whitespace-nowrap"
+                          >
+                            {m}
+                          </span>
+                        ))}
+                        {tx.messages.length > 2 && (
+                          <span className="text-[11px] text-slate-500">+{tx.messages.length - 2}</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-400 text-right whitespace-nowrap">
+                      <div className="inline-flex items-center gap-1.5 tabular-nums">
+                        <ClockIcon className="w-3.5 h-3.5 text-slate-500" />
+                        <span>{tx.timestamp ? formatDateTime(tx.timestamp) : '—'}</span>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
-      </div>
-
+      </section>
     </div>
   )
 }
