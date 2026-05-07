@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { apiFetch, formatDecimal, formatInt, timeAgo } from '../utils'
+import { apiFetch, formatDecimal, timeAgo } from '../utils'
 
 type MarketResponse = {
   market_stats: {
@@ -29,7 +29,7 @@ export function MarketStats() {
 
   if (!data) return null
 
-  const { market_stats, token_stats } = data
+  const { market_stats } = data
   const askRatio = 50 + market_stats.spread_percent / 2
   const bidRatio = 100 - askRatio
 
