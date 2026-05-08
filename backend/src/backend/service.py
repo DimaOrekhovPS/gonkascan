@@ -136,6 +136,28 @@ def _decode_fixed_point(fp: Dict[str, Any]) -> Decimal:
     e = int(fp["exponent"])
     return v * (Decimal(10) ** Decimal(e))
 
+
+def _extract_confirmation_poc_ratio(participant_info: Dict[str, Any]) -> Optional[float]:
+    """
+    Read the chain's pre-computed confirmation PoC ratio from a participant
+    response. The field lives at `current_epoch_stats.confirmationPoCRatio`
+    and is encoded as a Cosmos Dec object: {"value": "<int>", "exponent": <int>}.
+
+    This is the canonical value used by the chain for slashing/punishments,
+    and reflects all internal adjustments to validation weight. Computing the
+    ratio locally from raw `confirmation_weight / weight` does NOT match the
+    chain's logic (it can exceed 100%), so we always use the on-chain value.
+    """
+    stats = participant_info.get("current_epoch_stats") or {}
+    fp = stats.get("confirmationPoCRatio")
+    if not isinstance(fp, dict) or "value" not in fp or "exponent" not in fp:
+        return None
+    try:
+        return float(_decode_fixed_point(fp))
+    except (ValueError, TypeError, KeyError) as e:
+        logger.warning(f"Failed to decode confirmationPoCRatio {fp}: {e}")
+        return None
+
 def _calc_participant_collateral_status(
     collateral_params: Dict[str, Any],
     weight: Dict[str, Any],
@@ -1390,7 +1412,11 @@ class InferenceService:
                 vw["member_address"]: vw for vw in validation_weights
             }
             
-            participant_statuses = {}
+            # Pull per-participant data once; we read both `status` and the
+            # chain's pre-computed `confirmationPoCRatio` from the same payload,
+            # so this does not add extra HTTP calls.
+            participant_statuses: Dict[str, str] = {}
+            chain_ratios: Dict[str, Optional[float]] = {}
             for participant in active_participants:
                 participant_id = participant["index"]
                 try:
@@ -1399,19 +1425,21 @@ class InferenceService:
                     )
                     participant_info = participant_data.get("participant", {})
                     participant_statuses[participant_id] = participant_info.get("status", "")
+                    chain_ratios[participant_id] = _extract_confirmation_poc_ratio(participant_info)
                 except Exception as e:
-                    logger.debug(f"Failed to fetch status for {participant_id}: {e}")
+                    logger.debug(f"Failed to fetch participant data for {participant_id}: {e}")
                     participant_statuses[participant_id] = ""
-            
+                    chain_ratios[participant_id] = None
+
             confirmation_data = []
-            
+
             for participant in active_participants:
                 participant_id = participant["index"]
-                
+
                 try:
                     ml_nodes = participant.get("ml_nodes", [])
                     weight_to_confirm = _calculate_weight_to_confirm(ml_nodes)
-                    
+
                     validation_info = validation_weights_map.get(participant_id, {})
                     confirmation_weight_raw = validation_info.get("confirmation_weight")
                     confirmation_weight = None
@@ -1420,13 +1448,18 @@ class InferenceService:
                             confirmation_weight = int(confirmation_weight_raw)
                         except (ValueError, TypeError):
                             logger.warning(f"Invalid confirmation_weight for {participant_id}: {confirmation_weight_raw}")
-                    
+
                     participant_status = participant_statuses.get(participant_id, "")
-                    
-                    confirmation_poc_ratio = None
-                    if confirmation_weight is not None and weight_to_confirm > 0:
-                        confirmation_poc_ratio = round(confirmation_weight / weight_to_confirm, 4)
-                    
+
+                    # Use the chain-side pre-computed ratio. The raw
+                    # `confirmation_weight / weight` division does not match
+                    # chain logic (the chain applies adjustments to the
+                    # weight before computing this ratio, and this is the
+                    # exact value used for slashing/punishments).
+                    confirmation_poc_ratio = chain_ratios.get(participant_id)
+                    if confirmation_poc_ratio is not None:
+                        confirmation_poc_ratio = round(confirmation_poc_ratio, 4)
+
                     confirmation_data.append({
                         "participant_index": participant_id,
                         "weight_to_confirm": weight_to_confirm,
@@ -1434,7 +1467,7 @@ class InferenceService:
                         "confirmation_poc_ratio": confirmation_poc_ratio,
                         "participant_status": participant_status
                     })
-                    
+
                 except Exception as e:
                     logger.warning(f"Failed to process confirmation data for {participant_id}: {e}")
                     continue

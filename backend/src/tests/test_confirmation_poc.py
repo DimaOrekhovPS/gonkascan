@@ -1,20 +1,47 @@
 import pytest
-from backend.service import _calculate_weight_to_confirm
+from backend.service import _calculate_weight_to_confirm, _extract_confirmation_poc_ratio
 from backend.models import ParticipantStats, CurrentEpochStats
 
 
-def test_confirmation_poc_ratio_calculation():
-    confirmation_weight = 613
-    weight_to_confirm = 261448
-    ratio = round(confirmation_weight / weight_to_confirm, 4)
-    assert ratio == 0.0023
-    assert ratio < 0.5
-    
-    confirmation_weight_2 = 22403
-    weight_to_confirm_2 = 22403
-    ratio_2 = round(confirmation_weight_2 / weight_to_confirm_2, 4)
-    assert ratio_2 == 1.0
-    assert ratio_2 >= 0.5
+class TestExtractConfirmationPoCRatio:
+    def test_decodes_dec_with_negative_exponent(self):
+        # Real chain response: 924919395994990 * 10^-16 ≈ 0.0925
+        info = {
+            "current_epoch_stats": {
+                "confirmationPoCRatio": {
+                    "value": "924919395994990",
+                    "exponent": -16,
+                }
+            }
+        }
+        ratio = _extract_confirmation_poc_ratio(info)
+        assert ratio is not None
+        assert abs(ratio - 0.0924919395994990) < 1e-12
+
+    def test_returns_none_when_field_missing(self):
+        assert _extract_confirmation_poc_ratio({}) is None
+        assert _extract_confirmation_poc_ratio({"current_epoch_stats": {}}) is None
+
+    def test_returns_none_when_dec_malformed(self):
+        info = {"current_epoch_stats": {"confirmationPoCRatio": "not-a-dec"}}
+        assert _extract_confirmation_poc_ratio(info) is None
+
+        info_partial = {"current_epoch_stats": {"confirmationPoCRatio": {"value": "1"}}}
+        assert _extract_confirmation_poc_ratio(info_partial) is None
+
+    def test_one_point_zero_dec(self):
+        # 10000000000000000 * 10^-16 = 1.0 (full confirmation)
+        info = {
+            "current_epoch_stats": {
+                "confirmationPoCRatio": {
+                    "value": "10000000000000000",
+                    "exponent": -16,
+                }
+            }
+        }
+        ratio = _extract_confirmation_poc_ratio(info)
+        assert ratio is not None
+        assert abs(ratio - 1.0) < 1e-12
 
 
 class TestCalculateWeightToConfirm:
