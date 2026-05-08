@@ -30,6 +30,9 @@
     text-rendering: optimizeLegibility;
     font-feature-settings: 'cv11', 'ss01', 'ss03';
     background-color: rgb(var(--bg));
+    /* Belt + suspenders against accidental horizontal overflow on mobile.
+       Use `clip` (not `hidden`) so sticky positioning still works correctly. */
+    overflow-x: clip;
   }
 
   body {

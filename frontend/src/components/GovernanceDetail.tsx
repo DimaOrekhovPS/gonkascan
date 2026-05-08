@@ -583,8 +583,61 @@ export function GovernanceDetail({ proposalId }: { proposalId: string }) {
                   />
                 </div>
 
-                {/* vote table */}
-                <div className="rounded-xl overflow-hidden overflow-x-auto border border-white/[0.06]">
+                {/* Mobile sort controls */}
+                <div className="sm:hidden flex gap-2 mb-2">
+                  <button
+                    onClick={() => {
+                      setSortKey('height')
+                      setSortOrder((o) => (o === 'desc' ? 'asc' : 'desc'))
+                    }}
+                    className={`flex-1 inline-flex items-center justify-center gap-1 h-8 px-3 rounded-md text-xs font-medium border transition-colors ${
+                      sortKey === 'height'
+                        ? 'bg-white/[0.06] text-slate-50 border-white/[0.10]'
+                        : 'bg-transparent text-slate-400 border-white/[0.06]'
+                    }`}
+                  >
+                    Height {sortKey === 'height' && <span className="text-accent-400">{sortOrder === 'desc' ? '↓' : '↑'}</span>}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSortKey('weight')
+                      setSortOrder((o) => (o === 'desc' ? 'asc' : 'desc'))
+                    }}
+                    className={`flex-1 inline-flex items-center justify-center gap-1 h-8 px-3 rounded-md text-xs font-medium border transition-colors ${
+                      sortKey === 'weight'
+                        ? 'bg-white/[0.06] text-slate-50 border-white/[0.10]'
+                        : 'bg-transparent text-slate-400 border-white/[0.06]'
+                    }`}
+                  >
+                    Power {sortKey === 'weight' && <span className="text-accent-400">{sortOrder === 'desc' ? '↓' : '↑'}</span>}
+                  </button>
+                </div>
+
+                {/* Mobile: stacked cards */}
+                <div className="sm:hidden space-y-2">
+                  {filteredVotes.map((tx) => {
+                    const msg = tx.tx.body.messages[0]
+                    const option = parseVoteType(tx)
+                    return (
+                      <div key={`${tx.txhash}-mobile`} className="surface-inset p-3">
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <span className="font-semibold text-sm tabular-nums" style={{ color: VOTE_COLOR_MAP[option] }}>{option}</span>
+                          <span className="text-[10.5px] font-mono text-slate-500 tabular-nums">#{formatInt(tx.height)}</span>
+                        </div>
+                        <div className="font-mono text-[12px] text-slate-200 truncate mb-1.5">{msg?.voter || '—'}</div>
+                        <div className="text-[11px] text-slate-500 tabular-nums">
+                          Power <span className="text-slate-300 font-mono">{formatInt(getVoteWeight(tx))}</span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                  {filteredVotes.length === 0 && (
+                    <div className="py-8 px-4 text-center text-sm text-slate-500">No votes found in this category</div>
+                  )}
+                </div>
+
+                {/* Desktop: vote table */}
+                <div className="hidden sm:block rounded-xl overflow-hidden overflow-x-auto border border-white/[0.06]">
                   <div className="grid min-w-[720px] grid-cols-[3fr_1fr_1fr_1fr] bg-white/[0.02] px-4 py-3 text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em]">
                     <div>Voter</div>
                     <div>Option</div>

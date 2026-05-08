@@ -105,14 +105,14 @@ export function BountyProgram() {
       <BackNavigation onBack={handleBack} backLabel="Resource" title="Bounty Program"/>
 
       {/* Discord Community */}
-      <div className="surface p-6">
+      <div className="surface p-4 sm:p-6">
         <h3 className="text-base font-semibold text-slate-50 mb-4">Discord community</h3>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <img src="/gonka.svg" alt="Gonka" className="w-10 h-10 rounded-full shrink-0" />
-            <div>
-              <div className="text-sm font-semibold text-slate-50">Gonka Official</div>
-              <div className="text-xs text-slate-400">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+            <img src="/gonka.svg" alt="Gonka" className="w-9 h-9 sm:w-10 sm:h-10 rounded-full shrink-0" />
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-slate-50 truncate">Gonka Official</div>
+              <div className="text-xs text-slate-400 truncate">
                 Live: {discordStats.online?.toLocaleString() ?? '...'} &bull;&nbsp;
                 Total: {discordStats.total?.toLocaleString() ?? '...'}
               </div>
@@ -122,12 +122,12 @@ export function BountyProgram() {
             href="https://discord.com/invite/RADwCT2U6R"
             target="_blank"
             rel="noopener noreferrer"
-            className="px-5 py-2 bg-[#5865F2] text-white text-sm font-medium rounded-lg hover:bg-[#4752C4] transition-colors"
+            className="shrink-0 inline-flex items-center justify-center px-4 sm:px-5 h-9 bg-[#5865F2] text-white text-sm font-medium rounded-lg hover:bg-[#4752C4] transition-colors"
           >
             Join
           </a>
         </div>
-        <p className="text-sm text-slate-400 mt-4">
+        <p className="text-sm text-slate-400 mt-4 leading-relaxed">
           Join our Discord community to get the latest bounty program updates, technical support, and connect with other developers.
         </p>
       </div>

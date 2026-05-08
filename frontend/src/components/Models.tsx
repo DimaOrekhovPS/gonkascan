@@ -159,7 +159,42 @@ export function Models() {
           <p className="section-subtitle mt-1">Click on a model to view detailed information</p>
         </div>
 
-        <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
+        {/* Mobile: stacked cards */}
+        <div className="sm:hidden space-y-2.5">
+          {sortedModels.map((model) => {
+            const stats = statsMap.get(model.id)
+            return (
+              <button
+                key={`${model.id}-mobile`}
+                onClick={() => handleRowClick(model)}
+                className="block w-full text-left surface-inset p-3 hover:bg-white/[0.04] transition-colors"
+              >
+                <div className="font-mono text-[13px] text-slate-100 break-all mb-2">{model.id}</div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-0.5">Weight</div>
+                    <div className="font-bold text-slate-50 tabular-nums text-sm">{model.total_weight.toLocaleString()}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-0.5">Hosts</div>
+                    <div className="text-slate-200 tabular-nums text-sm">{model.participant_count}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-0.5">Inferences</div>
+                    <div className="text-slate-200 tabular-nums text-sm">{stats ? stats.inferences.toLocaleString() : '—'}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-0.5">AI tokens</div>
+                    <div className="text-slate-200 tabular-nums text-sm">{stats ? parseInt(stats.ai_tokens).toLocaleString() : '—'}</div>
+                  </div>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Desktop: full table */}
+        <div className="hidden sm:block overflow-x-auto rounded-xl border border-white/[0.06]">
           <table className="min-w-[720px] w-full">
             <thead className="bg-white/[0.02]">
               <tr className="border-b border-white/[0.06]">

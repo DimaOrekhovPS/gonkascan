@@ -157,7 +157,76 @@ export function TransfersTable({ address }: TransfersTableProps) {
 
   return (
     <>
-      <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
+      {/* Mobile: stacked cards (more readable than horizontal scroll) */}
+      <div className="sm:hidden space-y-2.5">
+        {list.map((tx, idx) => {
+          const amt = formatTransferAmount(tx, address)
+          const isOutgoing = tx.from_address === address
+          return (
+            <a
+              key={`${tx.tx_hash}-${idx}-mobile`}
+              href={`?page=transactions&tx=${tx.tx_hash.toUpperCase()}`}
+              className="block surface-inset p-3 hover:bg-white/[0.04] transition-colors"
+            >
+              {/* Row 1: direction + amount + status */}
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span
+                    className={`shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-lg ${
+                      isOutgoing
+                        ? 'bg-red-500/10 text-red-300 border border-red-400/25'
+                        : 'bg-accent-500/12 text-accent-300 border border-accent-400/30'
+                    }`}
+                    aria-hidden
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.4" viewBox="0 0 24 24">
+                      {isOutgoing ? (
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M7 17l9.2-9.2M17 17V7H7" />
+                      ) : (
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 7l-9.2 9.2M7 7v10h10" />
+                      )}
+                    </svg>
+                  </span>
+                  <span className={`text-base font-bold tabular-nums truncate ${amt.color}`}>{amt.text}</span>
+                </div>
+                <span className={`shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-md tracking-wide ${
+                  tx.status === 'success'
+                    ? 'bg-accent-500/12 text-accent-300 border border-accent-400/30'
+                    : 'bg-red-500/10 text-red-300 border border-red-400/25'
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${tx.status === 'success' ? 'bg-accent-400' : 'bg-red-400'}`} />
+                  {tx.status === 'success' ? 'OK' : 'Fail'}
+                </span>
+              </div>
+
+              {/* Row 2: type + time */}
+              <div className="flex items-center justify-between gap-2 text-xs mb-2">
+                <span className="text-slate-300 truncate">{tx.msg_type || '—'}</span>
+                <span className="shrink-0 text-slate-500 tabular-nums">{tx.timestamp ? timeAgo(tx.timestamp) : '—'}</span>
+              </div>
+
+              {/* Row 3: counterparty (only show the other party) */}
+              <div className="flex items-center gap-1.5 text-[12px] mb-1.5">
+                <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-slate-500 w-8">
+                  {isOutgoing ? 'To' : 'From'}
+                </span>
+                <span className="font-mono text-slate-200 truncate">
+                  {(isOutgoing ? tx.to_address : tx.from_address) || '—'}
+                </span>
+              </div>
+
+              {/* Row 4: hash + height */}
+              <div className="flex items-center justify-between gap-2 text-[11px] pt-1.5 border-t border-white/[0.04]">
+                <span className="font-mono text-slate-400 truncate">{shortHash(tx.tx_hash.toUpperCase(), 10)}</span>
+                <span className="shrink-0 font-mono text-slate-500 tabular-nums">#{tx.height.toLocaleString()}</span>
+              </div>
+            </a>
+          )
+        })}
+      </div>
+
+      {/* Desktop: full table */}
+      <div className="hidden sm:block overflow-x-auto rounded-xl border border-white/[0.06]">
         <table className="min-w-[900px] sm:min-w-full" style={{ tableLayout: 'fixed' }}>
           <colgroup>
             <col style={{ width: '15%' }} />
@@ -271,7 +340,7 @@ export function TransfersTable({ address }: TransfersTableProps) {
       {timePop.open && (
         <div
           ref={timePop.popoverRef}
-          className="fixed z-[9999] surface-raised p-4 w-72"
+          className="fixed z-[9999] surface-raised p-4 w-[min(18rem,calc(100vw-1rem))]"
           style={{ top: timePop.pos.top, left: timePop.pos.left }}
         >
           <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-500 mb-2">Quick presets</div>

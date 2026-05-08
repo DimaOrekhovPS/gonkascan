@@ -424,38 +424,35 @@ function App() {
           }`}
         >
           <div
-            className="mx-auto w-full max-w-[1440px] px-4 sm:px-6 md:px-8 transition-all duration-300 ease-out-expo"
+            className="mx-auto w-full max-w-[1440px] px-3 sm:px-6 md:px-8 transition-all duration-300 ease-out-expo"
             style={{
-              paddingTop: scrolled ? '12px' : '20px',
-              paddingBottom: scrolled ? '12px' : '20px',
+              paddingTop: scrolled ? '10px' : '14px',
+              paddingBottom: scrolled ? '10px' : '14px',
             }}
           >
-            <div className="flex items-center gap-3 sm:gap-5">
+            <div className="flex items-center gap-2 sm:gap-5 min-w-0">
               {/* Brand */}
               <button
                 onClick={() => handlePageChange('dashboard')}
-                className="group relative flex items-center gap-2.5 sm:gap-3 shrink-0"
+                className="group relative flex items-center gap-2 sm:gap-3 shrink-0"
               >
                 <div className="relative">
                   <div className="absolute -inset-2 rounded-full bg-accent-500/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" aria-hidden />
                   <div
                     className="relative flex items-center justify-center rounded-xl bg-gradient-to-br from-white/[0.10] to-white/[0.02] border border-white/[0.10] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] transition-all duration-300"
                     style={{
-                      width: scrolled ? '32px' : '38px',
-                      height: scrolled ? '32px' : '38px',
+                      width: scrolled ? '30px' : '34px',
+                      height: scrolled ? '30px' : '34px',
                     }}
                   >
                     <img src="/gonka.svg" alt="Gonka" className="h-[55%] w-auto invert opacity-95" />
                   </div>
                 </div>
-                <div className="flex items-baseline gap-1.5">
-                  <span
-                    className="font-extrabold text-slate-50 tracking-tight transition-all duration-300"
-                    style={{ fontSize: scrolled ? '15px' : '17px' }}
-                  >
-                    Gonka<span className="text-accent-400">scan</span>
-                  </span>
-                </div>
+                <span
+                  className="font-extrabold text-slate-50 tracking-tight transition-all duration-300 text-[15px] sm:text-[17px]"
+                >
+                  Gonka<span className="text-accent-400">scan</span>
+                </span>
               </button>
 
               {/* Nav (desktop) */}
@@ -494,23 +491,23 @@ function App() {
               </nav>
 
               {/* Status + search */}
-              <div className="ml-auto flex items-center gap-2 sm:gap-3">
+              <div className="ml-auto flex items-center gap-2 sm:gap-3 min-w-0 flex-1 sm:flex-none justify-end">
                 <div
-                  className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] transition-opacity duration-300"
+                  className="hidden lg:flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] transition-opacity duration-300 shrink-0"
                   style={{ opacity: scrolled ? 0.7 : 1 }}
                 >
                   <span className="live-dot" aria-hidden />
                   <span className="text-[11px] font-medium text-slate-300 tracking-wide">Mainnet</span>
                 </div>
 
-                <div className="relative w-44 sm:w-64 md:w-80">
+                <div className="relative flex-1 sm:flex-none sm:w-64 md:w-80 min-w-0 max-w-[260px] sm:max-w-none">
                   <input
                     type="text"
                     placeholder="Search address, tx, height…"
                     value={globalSearch}
                     onChange={e => setGlobalSearch(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleGlobalSearch()}
-                    className="input pl-9 pr-12 h-9 text-[13px]"
+                    className="input pl-9 pr-3 sm:pr-12 h-9 text-[13px] w-full"
                   />
                   <svg
                     className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500 pointer-events-none"
@@ -560,8 +557,10 @@ function App() {
           </div>
         </header>
 
-        {/* === Main content === */}
-        <main className="flex-1 mx-auto w-full max-w-[1440px] px-4 sm:px-6 md:px-8 pt-28 sm:pt-32 md:pt-32 pb-12 sm:pb-16">
+        {/* === Main content ===
+             pt-36 on mobile accounts for the 2-row header (brand + nav).
+             At sm+, header is single row so pt-24 is enough. */}
+        <main className="flex-1 mx-auto w-full max-w-[1440px] px-3 sm:px-6 md:px-8 pt-36 sm:pt-24 md:pt-28 pb-12 sm:pb-16">
           {currentPage === 'timeline' ? (
             <Timeline />
           ) : currentPage === 'models' ? (
@@ -624,13 +623,13 @@ function App() {
                 <ActiveProposals />
 
                 {/* Network summary card */}
-                <section className="surface aurora-bg border-gradient-top p-4 sm:p-5 md:p-6 live-shine relative overflow-hidden">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-x-5 gap-y-5 mb-4">
-                    <div className="col-span-2 sm:col-span-1">
+                <section className="surface aurora-bg border-gradient-top p-3 sm:p-5 md:p-6 live-shine relative overflow-hidden">
+                  <div className="grid grid-cols-2 lg:grid-cols-7 gap-x-3 sm:gap-x-5 gap-y-4 sm:gap-y-5 mb-4">
+                    <div className="col-span-2 lg:col-span-1">
                       <EpochIdDisplay epochId={data.epoch_id} isCurrent={data.is_current} />
                     </div>
 
-                    <div className="border-t sm:border-t-0 sm:border-l border-white/[0.06] pt-5 sm:pt-0 sm:pl-5 lg:pl-6">
+                    <div className="lg:border-l lg:border-white/[0.06] lg:pl-6">
                       <StatItem
                         label="Current Block"
                         subText={shouldShowEstimatedBlock ? <>Last confirmed: {data.height.toLocaleString()}</> : ''}
@@ -639,17 +638,17 @@ function App() {
                       </StatItem>
                     </div>
 
-                    <div className="border-t sm:border-t-0 sm:border-l border-white/[0.06] pt-5 sm:pt-0 sm:pl-5 lg:pl-6">
+                    <div className="lg:border-l lg:border-white/[0.06] lg:pl-6">
                       <StatItem label="Participants" subText="">{data.participants.length}</StatItem>
                     </div>
 
-                    <div className="border-t lg:border-t-0 lg:border-l border-white/[0.06] pt-5 lg:pt-0 lg:pl-6">
+                    <div className="lg:border-l lg:border-white/[0.06] lg:pl-6">
                       <StatItem label="Total Weight">
                         {data.participants.reduce((sum, p) => sum + p.weight, 0).toLocaleString()}
                       </StatItem>
                     </div>
 
-                    <div className="border-t lg:border-t-0 lg:border-l border-white/[0.06] pt-5 lg:pt-0 lg:pl-6">
+                    <div className="lg:border-l lg:border-white/[0.06] lg:pl-6">
                       <StatItem label="Equivalent H100" subText="">
                         {Math.round(weightToH100(
                           data.participants.reduce((sum, p) => sum + p.weight, 0), data.epoch_id,
@@ -658,7 +657,7 @@ function App() {
                       </StatItem>
                     </div>
 
-                    <div className="border-t lg:border-t-0 lg:border-l border-white/[0.06] pt-5 lg:pt-0 lg:pl-6 col-span-2 sm:col-span-3 lg:col-span-1">
+                    <div className="lg:border-l lg:border-white/[0.06] lg:pl-6 col-span-2 lg:col-span-1">
                       <StatItem
                         label="Assigned Rewards"
                         subText={
@@ -679,7 +678,7 @@ function App() {
                       </StatItem>
                     </div>
 
-                    <div className="border-t lg:border-t-0 lg:border-l border-white/[0.06] pt-5 lg:pt-0 lg:pl-6 col-span-2 sm:col-span-3 lg:col-span-1">
+                    <div className="lg:border-l lg:border-white/[0.06] lg:pl-6 col-span-2 lg:col-span-1">
                       <EpochTimer data={data} />
                     </div>
                   </div>
@@ -696,7 +695,7 @@ function App() {
                 </section>
 
                 {/* Participant table card */}
-                <section className="surface p-4 sm:p-5 md:p-6">
+                <section className="surface p-3 sm:p-5 md:p-6">
                   <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
                       <h2 className="section-title">Participant Statistics</h2>
@@ -721,7 +720,7 @@ function App() {
                       <div className="text-sm text-slate-400">No matching participants in this epoch</div>
                     </div>
                   ) : (
-                    <div className="overflow-x-auto -mx-4 sm:-mx-5 md:-mx-6 px-4 sm:px-5 md:px-6">
+                    <div className="overflow-x-auto -mx-3 sm:-mx-5 md:-mx-6 px-3 sm:px-5 md:px-6">
                       <ParticipantTable
                         participants={filteredParticipants}
                         epochId={data.epoch_id}
@@ -744,8 +743,8 @@ function App() {
 
         {/* Footer */}
         <footer className="border-t border-white/[0.05] bg-night-50/50 backdrop-blur-md py-6 sm:py-8 mt-8">
-          <div className="container mx-auto px-4 sm:px-6 max-w-[1440px]">
-            <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-4 text-sm">
+          <div className="container mx-auto px-3 sm:px-6 max-w-[1440px]">
+            <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-3 sm:gap-4 text-sm text-center sm:text-left">
               <div className="flex items-center gap-2.5 text-slate-500">
                 <img src="/gonka.svg" alt="" className="h-3.5 w-auto opacity-50 invert" />
                 <span className="text-[12.5px]">Gonkascan · Real-time Gonka network explorer</span>

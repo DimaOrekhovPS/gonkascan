@@ -62,7 +62,7 @@ export function Address({ address }: AddressProps) {
     <div className="w-full max-w-[1440px] mx-auto animate-fade-in">
       <div className="surface overflow-hidden">
 
-        <div className="border-b border-white/[0.06] px-4 sm:px-5 md:px-6 py-4 sm:py-5">
+        <div className="border-b border-white/[0.06] px-3 sm:px-5 md:px-6 py-3 sm:py-5">
           <BackNavigation
             onBack={handleBack}
             backLabel="Back to Dashboard"
@@ -71,14 +71,14 @@ export function Address({ address }: AddressProps) {
           />
         </div>
 
-        <div className="px-4 sm:px-5 md:px-6 py-5 sm:py-6 md:py-7">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <div className="px-3 sm:px-5 md:px-6 py-4 sm:py-6 md:py-7">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4">
             {cards.map(({ label, value, accent }) => (
-              <div key={label} className="surface-inset p-4 sm:p-5">
-                <div className="text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em] mb-2">
+              <div key={label} className="surface-inset p-3 sm:p-5">
+                <div className="text-[10px] sm:text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em] mb-1.5 sm:mb-2">
                   {label}
                 </div>
-                <div className={`text-xl sm:text-2xl font-bold tabular-nums break-words tracking-tight ${
+                <div className={`text-base sm:text-2xl font-bold tabular-nums break-words tracking-tight ${
                   accent ? 'text-accent-300' : 'text-slate-50'
                 }`}>
                   {assetsLoading ? '—' : formatGNK(value)}
@@ -88,7 +88,7 @@ export function Address({ address }: AddressProps) {
           </div>
         </div>
 
-        <div className="px-4 sm:px-5 md:px-6 pb-3">
+        <div className="px-3 sm:px-5 md:px-6 pb-3">
           <TabBar
             tabs={['transfers', 'transactions'] as TabType[]}
             activeTab={activeTab}
@@ -97,7 +97,7 @@ export function Address({ address }: AddressProps) {
           />
         </div>
 
-        <div className="border-t border-white/[0.06] px-4 sm:px-5 md:px-6 py-5 sm:py-6">
+        <div className="border-t border-white/[0.06] px-3 sm:px-5 md:px-6 py-4 sm:py-6">
           {activeTab === 'transfers' && (
             <TransfersTable address={address} />
           )}

@@ -58,7 +58,55 @@ export function AddressTransactionsTable({ address }: AddressTransactionsTablePr
 
   return (
     <>
-      <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
+      {/* Mobile: stacked cards */}
+      <div className="sm:hidden space-y-2.5">
+        {allTransactions.map((tx) => (
+          <a
+            key={`${tx.tx_hash}-mobile`}
+            href={`?page=transactions&tx=${tx.tx_hash.toUpperCase()}`}
+            className="block surface-inset p-3 hover:bg-white/[0.04] transition-colors"
+          >
+            {/* Row 1: status + height + time */}
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <span className={`shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-md tracking-wide ${
+                tx.status === 'success'
+                  ? 'bg-accent-500/12 text-accent-300 border border-accent-400/30'
+                  : 'bg-red-500/10 text-red-300 border border-red-400/25'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${tx.status === 'success' ? 'bg-accent-400' : 'bg-red-400'}`} />
+                {tx.status === 'success' ? 'Success' : 'Failed'}
+              </span>
+              <span className="text-[11px] text-slate-500 tabular-nums">{tx.timestamp ? timeAgo(tx.timestamp) : '—'}</span>
+            </div>
+
+            {/* Row 2: messages */}
+            {tx.messages.length > 0 && (
+              <div className="flex flex-wrap gap-1 mb-2">
+                {tx.messages.slice(0, 3).map((m, i) => (
+                  <span
+                    key={i}
+                    className="inline-flex items-center px-2 py-0.5 rounded-md bg-white/[0.04] text-slate-300 border border-white/[0.06] text-[11px] font-medium"
+                  >
+                    {m}
+                  </span>
+                ))}
+                {tx.messages.length > 3 && (
+                  <span className="text-[11px] text-slate-500 self-center">+{tx.messages.length - 3}</span>
+                )}
+              </div>
+            )}
+
+            {/* Row 3: hash + height */}
+            <div className="flex items-center justify-between gap-2 text-[11px] pt-1.5 border-t border-white/[0.04]">
+              <span className="font-mono text-slate-300 truncate">{tx.tx_hash.toUpperCase()}</span>
+              <span className="shrink-0 font-mono text-slate-500 tabular-nums">#{tx.height.toLocaleString()}</span>
+            </div>
+          </a>
+        ))}
+      </div>
+
+      {/* Desktop: full table */}
+      <div className="hidden sm:block overflow-x-auto rounded-xl border border-white/[0.06]">
         <table className="min-w-[640px] sm:min-w-full">
           <thead className="bg-white/[0.02]">
             <tr className="border-b border-white/[0.06]">

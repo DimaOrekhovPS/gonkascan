@@ -16,27 +16,32 @@ export function TabBar<T extends string>({
   const getLabel = label ?? ((tab: T) => tab.charAt(0).toUpperCase() + tab.slice(1))
 
   if (variant === 'pill') {
+    // Outer scroll wrapper guarantees the bar never causes page-level horizontal
+    // overflow on narrow viewports — `max-w-full` clamps to parent width and the
+    // inner inline-flex scrolls horizontally within itself.
     return (
-      <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-white/[0.03] border border-white/[0.06] no-scrollbar overflow-x-auto">
-        {tabs.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => onChange(tab)}
-            className={`shrink-0 whitespace-nowrap text-[13px] font-medium px-3.5 h-8 rounded-lg transition-all duration-200 ease-out-expo ${
-              activeTab === tab
-                ? 'bg-white/[0.08] text-slate-50 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]'
-                : 'text-slate-400 hover:text-slate-100'
-            }`}
-          >
-            {getLabel(tab)}
-          </button>
-        ))}
+      <div className="max-w-full overflow-x-auto no-scrollbar -mx-1 px-1">
+        <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+          {tabs.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => onChange(tab)}
+              className={`shrink-0 whitespace-nowrap text-[13px] font-medium px-3.5 h-8 rounded-lg transition-all duration-200 ease-out-expo ${
+                activeTab === tab
+                  ? 'bg-white/[0.08] text-slate-50 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]'
+                  : 'text-slate-400 hover:text-slate-100'
+              }`}
+            >
+              {getLabel(tab)}
+            </button>
+          ))}
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+    <div className="max-w-full flex gap-2 overflow-x-auto pb-1 no-scrollbar">
       {tabs.map((tab) => (
         <button
           key={tab}

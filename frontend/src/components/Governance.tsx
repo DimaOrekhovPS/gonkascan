@@ -85,7 +85,81 @@ export function Governance() {
         </div>
       ) : (
         <>
-          <div className="rounded-xl overflow-hidden overflow-x-auto border border-white/[0.06]">
+          {/* Mobile: stacked cards */}
+          <div className="sm:hidden space-y-2.5">
+            {paged.map((p) => {
+              const yes = Number(p.final_tally_result?.yes_count || 0)
+              const no = Number(p.final_tally_result?.no_count || 0)
+              const abstain = Number(p.final_tally_result?.abstain_count || 0)
+              const veto = Number(p.final_tally_result?.no_with_veto_count || 0)
+              const votes = [
+                { key: 'yes', value: yes, color: 'bg-accent-400' },
+                { key: 'no', value: no, color: 'bg-red-400' },
+                { key: 'abstain', value: abstain, color: 'bg-violet-400' },
+                { key: 'veto', value: veto, color: 'bg-slate-500' },
+              ].filter((v) => v.value > 0)
+              const totalVotes = votes.reduce((s, v) => s + v.value, 0)
+
+              return (
+                <button
+                  key={`${p.id}-mobile`}
+                  onClick={() => {
+                    setSelectedProposalId(String(p.id))
+                    const params = new URLSearchParams(window.location.search)
+                    params.set('page', 'governance')
+                    params.set('proposal_id', String(p.id))
+                    window.history.pushState({}, '', `?${params.toString()}`)
+                  }}
+                  className="block w-full text-left surface-inset p-3 hover:bg-white/[0.04] transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="font-semibold text-slate-100 break-words text-sm leading-snug min-w-0">
+                      <span className="font-mono text-slate-500 mr-1">#{p.id}</span>
+                      {p.title}
+                    </div>
+                    <span
+                      className={`shrink-0 inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold tracking-wide ${
+                        p.status.includes('PASSED')
+                          ? 'bg-accent-500/12 text-accent-300 border border-accent-400/30'
+                          : p.status.includes('REJECTED')
+                            ? 'bg-red-500/10 text-red-300 border border-red-400/25'
+                            : 'bg-amber-500/10 text-amber-300 border border-amber-400/25'
+                      }`}
+                    >
+                      {p.status.replace('PROPOSAL_STATUS_', '')}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 mb-2">
+                    <span className="tabular-nums">Epoch <span className="text-slate-300 font-mono">#{p.epoch_id}</span></span>
+                    <span>{formatDateWithOrdinal(p.submit_time)}</span>
+                  </div>
+
+                  {totalVotes > 0 && (
+                    <div className="h-1.5 w-full bg-white/[0.04] rounded-full overflow-hidden flex mb-2">
+                      {votes.map((v) => (
+                        <div
+                          key={v.key}
+                          className={`${v.color} h-full`}
+                          style={{ width: `${(v.value / totalVotes) * 100}%` }}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 tabular-nums">
+                    <span>
+                      Weight {p.total_weight > 0 ? `${formatCompact(p.voted_weight)} / ${formatCompact(p.total_weight)}` : `${formatCompact(p.voted_weight)} / —`}
+                    </span>
+                    <span>Voters {p.total_voters}/{p.total_participants}</span>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Desktop: full grid */}
+          <div className="hidden sm:block rounded-xl overflow-hidden overflow-x-auto border border-white/[0.06]">
             <div className="grid min-w-[900px] grid-cols-[3fr_1fr_3fr_1.5fr_1.5fr] bg-white/[0.02] px-4 py-3 text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em]">
               <div>Proposal</div>
               <div>Epoch</div>

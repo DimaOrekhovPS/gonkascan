@@ -1,11 +1,10 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 
 interface NavTabProps {
   active: boolean
   onClick: () => void
   children: string
-  /** When true, the tab adapts to a transparent header (uses lighter text). */
-  onHeader?: boolean
 }
 
 export function NavTab({ active, onClick, children }: NavTabProps) {
@@ -45,24 +44,125 @@ interface NavDropdownProps {
   onSelect: (page: string) => void
 }
 
+const FLOAT_OFFSET = 8
+const VIEWPORT_PADDING = 8
+
+interface DropdownPos {
+  top: number
+  left: number
+  minWidth: number
+}
+
 export function NavDropdown({ label, active, items, activePage, onSelect }: NavDropdownProps) {
   const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState<DropdownPos | null>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false)
-      }
+  const computePosition = useCallback(() => {
+    const trigger = triggerRef.current
+    if (!trigger) return
+    const rect = trigger.getBoundingClientRect()
+    const menuWidth = menuRef.current?.offsetWidth ?? 200
+
+    let left = rect.left
+    if (left + menuWidth + VIEWPORT_PADDING > window.innerWidth) {
+      left = Math.max(VIEWPORT_PADDING, window.innerWidth - menuWidth - VIEWPORT_PADDING)
     }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    if (left < VIEWPORT_PADDING) left = VIEWPORT_PADDING
+
+    setPos({
+      top: rect.bottom + FLOAT_OFFSET,
+      left,
+      minWidth: rect.width,
+    })
   }, [])
 
+  // Click-outside (covers both trigger and portal menu) + ESC
+  useEffect(() => {
+    if (!open) return
+
+    const onClick = (e: MouseEvent) => {
+      const target = e.target as Node
+      if (
+        (triggerRef.current && triggerRef.current.contains(target)) ||
+        (menuRef.current && menuRef.current.contains(target))
+      ) {
+        return
+      }
+      setOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+
+    document.addEventListener('mousedown', onClick)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onClick)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  // Position on open + reposition on scroll/resize
+  useLayoutEffect(() => {
+    if (!open) return
+
+    computePosition()
+
+    const onUpdate = () => computePosition()
+    window.addEventListener('scroll', onUpdate, true)
+    window.addEventListener('resize', onUpdate)
+    return () => {
+      window.removeEventListener('scroll', onUpdate, true)
+      window.removeEventListener('resize', onUpdate)
+    }
+  }, [open, computePosition])
+
+  const menu = open && pos ? (
+    <div
+      ref={menuRef}
+      className="z-[80] py-1.5 rounded-xl bg-night-200/95 border border-white/[0.08] shadow-pop backdrop-blur-xl animate-fade-in"
+      style={{
+        position: 'fixed',
+        top: pos.top,
+        left: pos.left,
+        minWidth: Math.max(pos.minWidth, 200),
+      }}
+    >
+      {items.map((item) => (
+        <button
+          key={item.page}
+          onClick={() => {
+            onSelect(item.page)
+            setOpen(false)
+          }}
+          className={`group/item relative flex w-full items-center justify-between px-3 py-2 text-[13px] font-medium transition-colors mx-1 rounded-lg ${
+            activePage === item.page
+              ? 'bg-accent-500/10 text-accent-300'
+              : 'text-slate-300 hover:bg-white/[0.04] hover:text-slate-50'
+          }`}
+          style={{ width: 'calc(100% - 0.5rem)' }}
+        >
+          <span>{item.label}</span>
+          {activePage === item.page && (
+            <span
+              className="w-1.5 h-1.5 rounded-full bg-accent-400 shadow-[0_0_8px_rgba(62,229,177,0.7)]"
+            />
+          )}
+        </button>
+      ))}
+    </div>
+  ) : null
+
   return (
-    <div ref={ref} className="relative">
+    <>
       <button
+        ref={triggerRef}
         onClick={() => setOpen((prev) => !prev)}
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
         className={`group relative whitespace-nowrap shrink-0 px-3.5 h-9 text-[13px] font-medium rounded-lg
           transition-all duration-200 ease-out-expo flex items-center gap-1.5
           ${
@@ -97,34 +197,7 @@ export function NavDropdown({ label, active, items, activePage, onSelect }: NavD
         )}
       </button>
 
-      {open && (
-        <div
-          className="absolute left-0 top-full mt-2 z-50 min-w-[200px] origin-top animate-fade-in py-1.5
-            rounded-xl bg-night-200/95 border border-white/[0.08] shadow-pop backdrop-blur-xl"
-        >
-          {items.map((item) => (
-            <button
-              key={item.page}
-              onClick={() => {
-                onSelect(item.page)
-                setOpen(false)
-              }}
-              className={`group/item relative flex w-full items-center justify-between px-3 py-2 text-[13px] font-medium transition-colors mx-1 rounded-lg ${
-                activePage === item.page
-                  ? 'bg-accent-500/10 text-accent-300'
-                  : 'text-slate-300 hover:bg-white/[0.04] hover:text-slate-50'
-              }`}
-            >
-              <span>{item.label}</span>
-              {activePage === item.page && (
-                <span
-                  className="w-1.5 h-1.5 rounded-full bg-accent-400 shadow-[0_0_8px_rgba(62,229,177,0.7)]"
-                />
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
+      {menu && createPortal(menu, document.body)}
+    </>
   )
 }

@@ -107,15 +107,20 @@ export function ParticipantModal({ participantId, epochId, currentEpochId }: Par
   }) ?? []
 
   return (
-    <div className="w-full max-w-[1440px] mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-5 md:py-6">
-      <div className="surface">
+    <div className="w-full max-w-[1440px] mx-auto animate-fade-in min-w-0">
+      <div className="surface overflow-hidden">
 
-        <div className="border-b border-white/[0.06] px-3 sm:px-4 md:px-6 py-3 sm:py-4">
-          <BackNavigation onBack={handleBack} backLabel="Dashboard" title={participant.index} badge={{ label: 'Participant', color: 'orange' }} />
+        <div className="border-b border-white/[0.06] px-3 sm:px-5 md:px-6 py-3 sm:py-5">
+          <BackNavigation
+            onBack={handleBack}
+            backLabel="Back to Dashboard"
+            title={<span className="font-mono">{participant.index}</span>}
+            badge={{ label: 'Participant', color: 'orange' }}
+          />
         </div>
 
-        <div className="px-3 sm:px-4 md:px-6 py-4 sm:py-5 md:py-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+        <div className="px-3 sm:px-5 md:px-6 py-4 sm:py-6 md:py-7">
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-2.5 sm:gap-4">
             <StatCard label="Total" size="lg">{formatGNK(balance_gonka + vesting_gonka)}</StatCard>
             <StatCard label="Balance" size="lg">{formatGNK(balance_gonka)}</StatCard>
             <StatCard label="Mined" size="lg">{formatGNK(total_rewards)}</StatCard>
@@ -123,26 +128,51 @@ export function ParticipantModal({ participantId, epochId, currentEpochId }: Par
           </div>
         </div>
 
-        <div className="px-3 sm:px-4 md:px-6 py-2">
+        <div className="px-3 sm:px-5 md:px-6 pb-3">
           <TabBar
             tabs={['details', 'inferences', 'transfers', 'transactions'] as TabType[]}
             activeTab={activeTab}
             onChange={setActiveTab}
+            variant="pill"
           />
         </div>
 
         {activeTab === 'details' && (
-          <div className="px-3 sm:px-4 md:px-6 py-4 space-y-6">
+          <div className="px-3 sm:px-5 md:px-6 py-4 space-y-6 border-t border-white/[0.06]">
             {vestingEpochData.length > 0 && (
-              <div>
-                <div className="text-sm font-semibold text-slate-200">Next 180 Epochs Vesting Release</div>
-                <div className="w-full h-[220px] sm:h-[260px]">
+              <div className="min-w-0">
+                <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-500 mb-2">Next 180 Epochs Vesting Release</div>
+                <div className="w-full h-[200px] sm:h-[260px] min-w-0">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={vestingEpochData} barCategoryGap={1} margin={{top: 10, right: 10, bottom: 0, left: 0}}>
-                      <XAxis dataKey="epoch" tick={{ fontSize: 10 }} ticks={[10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180]} tickFormatter={(v) => v.toString()}/>
-                      <YAxis tick={{ fontSize: 10 }} width={36}/>
-                      <Tooltip formatter={(value: number) => formatGNK(value)} labelFormatter={(label: number) => `Epoch +${label}`}/>
-                      <Bar dataKey="amount" fill="#16a34a"/>
+                    <BarChart data={vestingEpochData} barCategoryGap={1} margin={{ top: 10, right: 8, bottom: 0, left: 0 }}>
+                      <XAxis
+                        dataKey="epoch"
+                        tick={{ fontSize: 10, fill: 'rgb(125,134,150)' }}
+                        ticks={[20, 60, 100, 140, 180]}
+                        tickFormatter={(v) => v.toString()}
+                        axisLine={{ stroke: 'rgba(255,255,255,0.06)' }}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 10, fill: 'rgb(125,134,150)' }}
+                        width={36}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          background: 'rgba(19,23,28,0.96)',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          borderRadius: '0.5rem',
+                          fontSize: '12px',
+                          color: 'rgb(247,248,250)',
+                          padding: '6px 10px',
+                        }}
+                        cursor={{ fill: 'rgba(62,229,177,0.06)' }}
+                        formatter={(value: number) => formatGNK(value)}
+                        labelFormatter={(label: number) => `Epoch +${label}`}
+                      />
+                      <Bar dataKey="amount" fill="rgb(62,229,177)" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -237,7 +267,7 @@ export function ParticipantModal({ participantId, epochId, currentEpochId }: Par
               </div>
             
               <div className="border-t border-white/[0.06] pt-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-3 sm:gap-4">
+                <div className="grid grid-cols-2 xl:grid-cols-6 gap-2.5 sm:gap-4">
                   <StatCard label="Weight">{participant.weight.toLocaleString()}</StatCard>
 
                   <StatCard label="Weight to Confirm">
@@ -324,13 +354,13 @@ export function ParticipantModal({ participantId, epochId, currentEpochId }: Par
               <div className="border-t border-white/[0.06] pt-6">
                 <h3 className="text-sm font-semibold text-slate-200 uppercase tracking-wider mb-4">Collateral Status</h3>
               
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+                <div className="grid grid-cols-2 xl:grid-cols-4 gap-2.5 sm:gap-4">
                   <StatCard label="Potential Weight">{collateralStatus.potential_weight.toLocaleString()}</StatCard>
                   <StatCard label="Effective Weight">{collateralStatus.effective_weight.toLocaleString()}</StatCard>
                   <StatCard label="Collateral Rate" valueClassName={collateralStatus.collateral_ratio < 0.90 ? 'text-red-300' : 'text-accent-400'}>
                     {(collateralStatus.collateral_ratio * 100).toFixed(2)}%
                   </StatCard>
-                  <StatCard label="Needed Collateral">{collateralStatus.needed_ngonka.toLocaleString()} ngonka</StatCard>
+                  <StatCard label="Needed Collateral" valueClassName="text-base sm:text-lg break-all">{collateralStatus.needed_ngonka.toLocaleString()} ngonka</StatCard>
                 </div>
               </div>
             )}
@@ -338,7 +368,7 @@ export function ParticipantModal({ participantId, epochId, currentEpochId }: Par
             <div className="border-t border-white/[0.06] pt-6">
               <h3 className="text-sm font-semibold text-slate-200 uppercase tracking-wider mb-4">Inference Statistics</h3>
             
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-3 sm:gap-4">
+              <div className="grid grid-cols-2 xl:grid-cols-6 gap-2.5 sm:gap-4">
                 <StatCard label="Total Inferenced">{totalInferenced.toLocaleString()}</StatCard>
                 <StatCard label="Missed Requests" valueClassName={parseInt(participant.current_epoch_stats.missed_requests) > 0 ? 'text-red-300' : undefined}>
                   {parseInt(participant.current_epoch_stats.missed_requests).toLocaleString()}
@@ -377,32 +407,50 @@ export function ParticipantModal({ participantId, epochId, currentEpochId }: Par
               {detailsLoading ? (
                 <div className="text-slate-500 text-sm">Loading rewards...</div>
               ) : details && details.rewards && details.rewards.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="min-w-[640px] w-full">
-                    <thead className="bg-white/[0.02]">
-                      <tr className="border-b border-white/[0.06]">
-                        <th className="px-4 py-3 text-left text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em] whitespace-nowrap">Epoch</th>
-                        <th className="px-4 py-3 text-right text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em] whitespace-nowrap">Assigned Reward</th>
-                        <th className="px-4 py-3 text-right text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em] whitespace-nowrap">Claimed</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {details.rewards.map((reward) => (
-                        <tr key={reward.epoch_id} className="border-t border-white/[0.05] hover:bg-white/[0.03] transition-colors">
-                          <td className="px-4 py-3 text-sm font-mono text-slate-100 whitespace-nowrap tabular-nums">#{reward.epoch_id}</td>
-                          <td className="px-4 py-3 text-sm text-right text-slate-100 whitespace-nowrap tabular-nums">
-                            {reward.assigned_reward_gnk > 0 ? <>{reward.assigned_reward_gnk} <span className="text-slate-500">GNK</span></> : <span className="text-slate-600">—</span>}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-right whitespace-nowrap">
-                            {reward.claimed ? <Badge variant="green">Yes</Badge> : <Badge variant="red">No</Badge>}
-                          </td>
+                <>
+                  {/* Mobile: stacked cards */}
+                  <div className="sm:hidden space-y-2">
+                    {details.rewards.map((reward) => (
+                      <div key={`${reward.epoch_id}-mobile`} className="surface-inset p-3 flex items-center justify-between gap-3">
+                        <span className="font-mono text-sm text-slate-100 tabular-nums shrink-0">#{reward.epoch_id}</span>
+                        <span className="text-sm text-slate-100 tabular-nums truncate">
+                          {reward.assigned_reward_gnk > 0 ? <>{reward.assigned_reward_gnk} <span className="text-slate-500">GNK</span></> : <span className="text-slate-600">—</span>}
+                        </span>
+                        <span className="shrink-0">
+                          {reward.claimed ? <Badge variant="green">Yes</Badge> : <Badge variant="red">No</Badge>}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Desktop: table */}
+                  <div className="hidden sm:block overflow-x-auto rounded-xl border border-white/[0.06]">
+                    <table className="min-w-[640px] w-full">
+                      <thead className="bg-white/[0.02]">
+                        <tr className="border-b border-white/[0.06]">
+                          <th className="px-4 py-3 text-left text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em] whitespace-nowrap">Epoch</th>
+                          <th className="px-4 py-3 text-right text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em] whitespace-nowrap">Assigned Reward</th>
+                          <th className="px-4 py-3 text-right text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em] whitespace-nowrap">Claimed</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {details.rewards.map((reward) => (
+                          <tr key={reward.epoch_id} className="border-t border-white/[0.05] hover:bg-white/[0.03] transition-colors">
+                            <td className="px-4 py-3 text-sm font-mono text-slate-100 whitespace-nowrap tabular-nums">#{reward.epoch_id}</td>
+                            <td className="px-4 py-3 text-sm text-right text-slate-100 whitespace-nowrap tabular-nums">
+                              {reward.assigned_reward_gnk > 0 ? <>{reward.assigned_reward_gnk} <span className="text-slate-500">GNK</span></> : <span className="text-slate-600">—</span>}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-right whitespace-nowrap">
+                              {reward.claimed ? <Badge variant="green">Yes</Badge> : <Badge variant="red">No</Badge>}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               ) : (
-                <div className="text-slate-300 text-sm surface-inset p-4 border border-white/[0.06]">
+                <div className="text-slate-300 text-sm surface-inset p-4">
                   Rewards not available for current epoch. Check back after epoch ends.
                 </div>
               )}
@@ -427,7 +475,7 @@ export function ParticipantModal({ participantId, epochId, currentEpochId }: Par
         )}
 
         {activeTab === 'inferences' && (
-          <div className="px-3 sm:px-4 md:px-6 py-4 space-y-6">
+          <div className="px-3 sm:px-5 md:px-6 py-4 space-y-6 border-t border-white/[0.06]">
             {(!currentEpochId || epochId < currentEpochId - 1) ? (
               <div className="text-center py-12 text-slate-400">
                 <p className="text-base font-medium">Data not available for older epochs</p>
@@ -478,13 +526,13 @@ export function ParticipantModal({ participantId, epochId, currentEpochId }: Par
         )}
 
         {activeTab === 'transactions' && (
-          <div className="px-3 sm:px-4 md:px-6 py-4 space-y-6">
+          <div className="px-3 sm:px-5 md:px-6 py-4 space-y-6 border-t border-white/[0.06]">
             <AddressTransactionsTable address={participantId} />
           </div>
         )}
 
         {activeTab === 'transfers' && (
-          <div className="px-3 sm:px-4 md:px-6 py-4 space-y-6">
+          <div className="px-3 sm:px-5 md:px-6 py-4 space-y-6 border-t border-white/[0.06]">
             <TransfersTable address={participantId} />
           </div>
         )}

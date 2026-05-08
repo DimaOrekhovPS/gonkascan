@@ -220,7 +220,31 @@ export function Hardware() {
           />
         </div>
 
-        <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
+        {/* Mobile: stacked cards */}
+        <div className="sm:hidden space-y-2.5">
+          {displayHardwares.map((hardware) => (
+            <button
+              key={`${hardware.id}-mobile`}
+              onClick={() => handleRowClick(hardware)}
+              className="block w-full text-left surface-inset p-3 hover:bg-white/[0.04] transition-colors"
+            >
+              <div className="font-mono text-[13px] text-slate-100 break-all mb-2">{hardware.id}</div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-0.5">Weight</div>
+                  <div className="font-bold text-slate-50 tabular-nums text-sm">{hardware.total_weight.toLocaleString()}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-0.5">Amount</div>
+                  <div className="text-slate-200 tabular-nums text-sm">{hardware.amount}</div>
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        {/* Desktop: full table */}
+        <div className="hidden sm:block overflow-x-auto rounded-xl border border-white/[0.06]">
           <table className="min-w-[640px] w-full">
             <thead className="bg-white/[0.02]">
               <tr className="border-b border-white/[0.06]">

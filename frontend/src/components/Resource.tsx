@@ -30,7 +30,7 @@ function ResourceCard({ icon, title, description, href, onClick }: CardProps) {
     </>
   )
 
-  const baseCls = 'group flex items-center gap-4 surface surface-hover p-5 cursor-pointer'
+  const baseCls = 'group flex items-center gap-3 sm:gap-4 surface surface-hover p-4 sm:p-5 cursor-pointer'
 
   if (href) {
     return (
@@ -48,20 +48,20 @@ function ResourceCard({ icon, title, description, href, onClick }: CardProps) {
 
 export function Resource({ onNavigate }: { onNavigate?: (page: string) => void }) {
   return (
-    <div className="space-y-10 sm:space-y-14 animate-fade-in">
+    <div className="space-y-8 sm:space-y-14 animate-fade-in">
 
       {/* Hero */}
-      <section className="relative overflow-hidden surface aurora-bg border-gradient-top p-6 sm:p-10 md:p-12">
+      <section className="relative overflow-hidden surface aurora-bg border-gradient-top p-5 sm:p-10 md:p-12">
         <div className="absolute inset-0 grid-overlay opacity-60 pointer-events-none" />
         <div className="relative">
-          <span className="chip border-accent-400/30 bg-accent-500/10 text-accent-300 mb-5">
+          <span className="chip border-accent-400/30 bg-accent-500/10 text-accent-300 mb-4 sm:mb-5">
             <span className="w-1.5 h-1.5 rounded-full bg-accent-400 shadow-[0_0_6px_rgba(62,229,177,0.7)]" />
             About the project
           </span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-50 mb-5 tracking-tight leading-[1.1]">
+          <h2 className="text-[26px] sm:text-4xl md:text-5xl font-extrabold text-slate-50 mb-4 sm:mb-5 tracking-tight leading-[1.1]">
             Gonka Project <span className="text-gradient-accent">Overview</span>
           </h2>
-          <p className="text-slate-300 leading-relaxed text-[15px] sm:text-base max-w-3xl">
+          <p className="text-slate-300 leading-relaxed text-[14px] sm:text-base max-w-3xl">
             Gonka is a decentralized network for high-efficiency AI compute — run by those who run it.
             It functions as a cost-effective and efficient alternative to centralized cloud services for
             AI model training and inference. As a protocol, it&apos;s not a company or a start-up.

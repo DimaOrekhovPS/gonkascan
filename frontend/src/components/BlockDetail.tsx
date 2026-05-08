@@ -371,7 +371,16 @@ export function BlockDetail({ height }: {height: string }) {
         <div className="px-4 sm:px-5 md:px-6 pt-4 sm:pt-5 pb-3">
           <h3 className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-500">Transactions</h3>
         </div>
-        <div className="overflow-x-auto">
+
+        {/* Mobile: stacked cards */}
+        <div className="sm:hidden px-3 pb-3 space-y-2">
+          {txRows.map((row) => (
+            <TxRowMobile key={row.key} row={row} />
+          ))}
+        </div>
+
+        {/* Desktop: full table */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="w-full min-w-[900px] text-sm table-fixed">
             <thead className="bg-white/[0.02] border-y border-white/[0.06]">
               <tr>
@@ -391,5 +400,64 @@ export function BlockDetail({ height }: {height: string }) {
         </div>
       </section>
     </div>
+  )
+}
+
+function TxRowMobile({ row }: { row: TxRowData }) {
+  const isFailed = row.status === 'Failed' && row.errorLog
+
+  return (
+    <a
+      href={`?page=transactions&tx=${row.txhash}`}
+      className="block surface-inset p-3 hover:bg-white/[0.04] transition-colors"
+    >
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <span className="font-mono text-[13px] text-slate-100 truncate" title={row.msgType}>{row.msgType}</span>
+        {row.status === 'Success' && (
+          <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-md tracking-wide bg-accent-500/12 text-accent-300 border border-accent-400/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-accent-400" />
+            OK
+          </span>
+        )}
+        {row.status === 'Failed' && (
+          <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-md tracking-wide bg-red-500/10 text-red-300 border border-red-400/25">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+            Fail
+          </span>
+        )}
+        {row.status === 'Unknown' && (
+          <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-md tracking-wide bg-white/[0.04] text-slate-400 border border-white/[0.06]">
+            ?
+          </span>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-1 text-[11.5px]">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 w-12 shrink-0">Creator</span>
+          {row.creator !== '-' ? (
+            <span className="font-mono text-slate-300 truncate">{shortHash(row.creator, 14)}</span>
+          ) : (
+            <span className="text-slate-600">—</span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 w-12 shrink-0">Hash</span>
+          <span className="font-mono text-slate-300 truncate">{shortHash(row.txhash, 14)}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 w-12 shrink-0">Gas</span>
+          <span className="font-mono text-slate-300 tabular-nums">
+            {toGonka(row.gasUsed)} <span className="text-slate-500">/</span> {toGonka(row.gasWanted)}
+          </span>
+        </div>
+      </div>
+
+      {isFailed && row.errorLog && (
+        <div className="mt-2 pt-2 border-t border-red-400/20">
+          <pre className="text-[10.5px] text-red-300 font-mono whitespace-pre-wrap break-all leading-relaxed">{row.errorLog}</pre>
+        </div>
+      )}
+    </a>
   )
 }

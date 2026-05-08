@@ -16,7 +16,7 @@ export function FilterSearchPopover({ popover, placeholder = 'Search...', value,
   return (
     <div
       ref={popover.popoverRef}
-      className="fixed z-[9999] surface-raised p-3 w-72 animate-fade-in"
+      className="fixed z-[9999] surface-raised p-3 w-[min(18rem,calc(100vw-1rem))] animate-fade-in"
       style={{ top: popover.pos.top, left: popover.pos.left }}
     >
       <input

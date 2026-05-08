@@ -93,8 +93,127 @@ export function ParticipantTable({ participants, onParticipantSelect, selectedPa
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
-      <table className="min-w-full">
+    <>
+      {/* Mobile: stacked cards (12 columns is impossible to scroll on small screens) */}
+      <div className="sm:hidden space-y-2.5">
+        {sortedParticipants.map((participant) => {
+          const totalInferenced = parseInt(participant.current_epoch_stats.inference_count)
+                                 + parseInt(participant.current_epoch_stats.missed_requests)
+          const missed = parseInt(participant.current_epoch_stats.missed_requests)
+          const invalid = parseInt(participant.current_epoch_stats.invalidated_inferences)
+          const isHighlighted = shouldHighlightRed(participant)
+          const isSelected = selectedParticipantId === participant.index
+
+          return (
+            <button
+              key={`${participant.index}-mobile`}
+              onClick={() => handleRowClick(participant)}
+              className={`block w-full text-left surface-inset p-3 transition-colors ${
+                isHighlighted
+                  ? 'bg-red-500/[0.06] border-red-400/25 hover:bg-red-500/[0.10]'
+                  : isSelected
+                    ? 'bg-accent-500/[0.08] border-accent-400/25 hover:bg-accent-500/[0.12]'
+                    : 'hover:bg-white/[0.04]'
+              }`}
+            >
+              {/* Row 1: index + status dots + weight */}
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <span className="font-mono text-[13px] text-slate-100 truncate">{participant.index}</span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="inline-flex items-center gap-1 text-[10px] text-slate-500 uppercase tracking-wider">
+                    <span>Jail</span>
+                    {participant.participant_status === 'INACTIVE' ? (
+                      <StatusDot state="unknown" title="Not a validator" />
+                    ) : participant.is_jailed === true ? (
+                      <StatusDot state="bad" title="Jailed" />
+                    ) : participant.is_jailed === false ? (
+                      <StatusDot state="ok" title="Active" />
+                    ) : (
+                      <StatusDot state="unknown" title="Unknown" />
+                    )}
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-[10px] text-slate-500 uppercase tracking-wider">
+                    <span>Health</span>
+                    {participant.node_healthy === true ? (
+                      <StatusDot state="ok" title="Healthy" />
+                    ) : participant.node_healthy === false ? (
+                      <StatusDot state="bad" title="Unhealthy" />
+                    ) : (
+                      <StatusDot state="unknown" title="Unknown" />
+                    )}
+                  </span>
+                </div>
+              </div>
+
+              {/* Row 2: weight + total inferenced */}
+              <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-0.5">Weight</div>
+                  <div className="font-bold text-slate-50 tabular-nums text-sm">{participant.weight.toLocaleString()}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-0.5">Total inferences</div>
+                  <div className="font-medium text-slate-200 tabular-nums text-sm">{totalInferenced.toLocaleString()}</div>
+                </div>
+              </div>
+
+              {/* Row 3: missed rate + invalid rate (compact) */}
+              <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-0.5">Missed</div>
+                  <div className="flex items-baseline gap-1.5 tabular-nums">
+                    <span className={`font-semibold text-sm ${
+                      !missedStatTest(missed, totalInferenced) ? 'text-red-300' : 'text-slate-200'
+                    }`}>
+                      {(participant.missed_rate * 100).toFixed(2)}%
+                    </span>
+                    <span className="text-[10.5px] text-slate-500">({missed.toLocaleString()})</span>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-0.5">Invalid</div>
+                  <div className="flex items-baseline gap-1.5 tabular-nums">
+                    <span className={`font-semibold text-sm ${
+                      !missedStatTest(invalid, parseInt(participant.current_epoch_stats.validated_inferences) + invalid) ? 'text-red-300' : 'text-slate-200'
+                    }`}>
+                      {(participant.invalidation_rate * 100).toFixed(2)}%
+                    </span>
+                    <span className="text-[10.5px] text-slate-500">({invalid.toLocaleString()})</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 4: collateral (if any) */}
+              {hasCollateral && participant.collateral_status && (
+                <div className="text-xs mb-2">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-0.5">Collateral</div>
+                  <div className={`font-semibold text-sm tabular-nums ${
+                    participant.collateral_status.collateral_ratio < 0.90 ? 'text-red-300' : 'text-slate-200'
+                  }`}>
+                    {(participant.collateral_status.collateral_ratio * 100).toFixed(2)}%
+                  </div>
+                </div>
+              )}
+
+              {/* Row 5: models */}
+              {participant.models.length > 0 && (
+                <div className="flex flex-wrap gap-1 pt-2 border-t border-white/[0.04]">
+                  {participant.models.slice(0, 4).map((model, idx) => (
+                    <Badge key={idx} variant="gray" className="font-medium whitespace-nowrap">{model}</Badge>
+                  ))}
+                  {participant.models.length > 4 && (
+                    <span className="text-[11px] text-slate-500 self-center">+{participant.models.length - 4}</span>
+                  )}
+                </div>
+              )}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Desktop: full table */}
+      <div className="hidden sm:block overflow-x-auto rounded-xl border border-white/[0.06]">
+        <table className="min-w-full">
         <thead className="bg-white/[0.02] backdrop-blur sticky top-0 z-10">
           <tr className="border-b border-white/[0.06]">
             <th className="px-4 py-3 text-left text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.14em]">Participant</th>
@@ -238,6 +357,7 @@ export function ParticipantTable({ participants, onParticipantSelect, selectedPa
           })}
         </tbody>
       </table>
-    </div>
+      </div>
+    </>
   )
 }
