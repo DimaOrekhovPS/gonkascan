@@ -139,6 +139,30 @@ def test_mlnode_info_with_poc_weight():
     assert ml_node.poc_weight == 1500
 
 
+def test_mlnode_info_with_scaled_weight_fields():
+    hardware = [HardwareInfo(type="GPU", count=2)]
+
+    ml_node = MLNodeInfo(
+        local_id="node1",
+        status="INFERENCE",
+        models=["model1"],
+        hardware=hardware,
+        host="localhost",
+        port="8080",
+        poc_weight=750,
+        raw_poc_weight=1500,
+        scaled_weight=750,
+        model_id="model1",
+        weight_scale_factor="0.5",
+    )
+
+    assert ml_node.poc_weight == 750
+    assert ml_node.raw_poc_weight == 1500
+    assert ml_node.scaled_weight == 750
+    assert ml_node.model_id == "model1"
+    assert ml_node.weight_scale_factor == "0.5"
+
+
 def test_mlnode_info_without_poc_weight():
     hardware = [HardwareInfo(type="GPU", count=2)]
     
