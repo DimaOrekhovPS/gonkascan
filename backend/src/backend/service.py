@@ -167,6 +167,7 @@ def _decode_fixed_point(fp: Optional[Dict[str, Any]]) -> Decimal:
 def _calc_participant_collateral_status(
     collateral_params: Dict[str, Any],
     potential_weight_value: int,
+    effective_weight_value: int,
     collateral_resp: Dict[str, Any],
 ) -> CollateralStatus:
     potential_weight = Decimal(potential_weight_value)
@@ -181,14 +182,11 @@ def _calc_participant_collateral_status(
     base_weight = potential_weight * base_ratio
     eligible_weight = potential_weight * (one - base_ratio)
 
-    if per_weight == 0:
-        activated_weight = eligible_weight if deposited > 0 else Decimal(0)
-        needed_collateral = 0 if eligible_weight == 0 else 1
-    else:
-        activated_weight = min(eligible_weight, deposited / per_weight)
-        needed_collateral = int(
-            (eligible_weight * per_weight).to_integral_value(rounding=ROUND_CEILING)
-        )
+    needed_collateral = (
+        0
+        if eligible_weight == 0
+        else int((eligible_weight * per_weight).to_integral_value(rounding=ROUND_CEILING))
+    )
 
     if needed_collateral <= 0:
         collateral_ratio = one
@@ -197,11 +195,9 @@ def _calc_participant_collateral_status(
         if collateral_ratio > one:
             collateral_ratio = one
 
-    effective_weight = base_weight + activated_weight
-
     return {
         "potential_weight": int(potential_weight),
-        "effective_weight": _floor_int(effective_weight),
+        "effective_weight": int(effective_weight_value),
         "collateral_ratio": float(collateral_ratio),
         "needed_ngonka": str(needed_collateral),
         "collateral_amount": collateral_resp
@@ -553,7 +549,9 @@ class InferenceService:
                     )
                     collateral_resp = await self.client.get_participant_collateral(p["index"])
                     collateral = _calc_participant_collateral_status(collateral_params, 
-                        weight_to_confirm, collateral_resp)
+                        confirmation_weight or 0,
+                        epoch_data_for_participant.get("weight", 0),
+                        collateral_resp)
                     
                     participant = ParticipantStats(
                         index=p["index"],

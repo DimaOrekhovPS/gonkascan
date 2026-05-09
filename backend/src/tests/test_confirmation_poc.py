@@ -84,8 +84,8 @@ class TestConfirmationRatio:
         assert _safe_confirmation_ratio(None, 100) is None
 
 
-class TestCollateralApproximation:
-    def test_uses_weight_to_confirm_as_potential_weight(self):
+class TestCollateralStatus:
+    def test_uses_confirmation_weight_as_potential_and_root_weight_as_effective(self):
         collateral_params = {
             "base_weight_ratio": {"value": "1", "exponent": -1},
             "collateral_per_weight_unit": {"value": "2", "exponent": 0},
@@ -95,11 +95,12 @@ class TestCollateralApproximation:
         result = _calc_participant_collateral_status(
             collateral_params,
             100,
+            88,
             collateral_resp,
         )
 
         assert result["potential_weight"] == 100
-        assert result["effective_weight"] == 55
+        assert result["effective_weight"] == 88
         assert result["needed_ngonka"] == "180"
         assert result["collateral_ratio"] == 0.5
 
