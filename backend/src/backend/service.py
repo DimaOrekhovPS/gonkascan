@@ -549,7 +549,7 @@ class InferenceService:
                     )
                     collateral_resp = await self.client.get_participant_collateral(p["index"])
                     collateral = _calc_participant_collateral_status(collateral_params, 
-                        confirmation_weight or 0,
+                        weight_to_confirm,
                         epoch_data_for_participant.get("weight", 0),
                         collateral_resp)
                     

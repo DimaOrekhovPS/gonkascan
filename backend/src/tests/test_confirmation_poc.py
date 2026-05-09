@@ -85,7 +85,7 @@ class TestConfirmationRatio:
 
 
 class TestCollateralStatus:
-    def test_uses_confirmation_weight_as_potential_and_root_weight_as_effective(self):
+    def test_uses_weight_to_confirm_as_potential_and_root_weight_as_effective(self):
         collateral_params = {
             "base_weight_ratio": {"value": "1", "exponent": -1},
             "collateral_per_weight_unit": {"value": "2", "exponent": 0},
