@@ -17,7 +17,8 @@ The chain now computes final participant weight using multi-model PoC, model sca
 
 - Participant `Weight` uses the chain root epoch group weight.
 - `Weight to Confirm` uses scaled model subgroup weights.
-- `Confirmation Ratio` uses `confirmation_weight / weight_to_confirm`, capped at 100%.
+- `Confirmation Ratio` uses `(confirmation_weight / weight_to_confirm) / 0.909`, capped at 100%.
+- Cached exact chain `confirmationPoCRatio` is preferred when available.
 - MLNode cards display scaled node weight.
 - Collateral status uses `weight_to_confirm` as potential weight and root `weight` as effective weight.
 
@@ -125,10 +126,12 @@ This is the scaled own-model PoC baseline used as the confirmation denominator.
 
 ### Confirmation Ratio
 
-Use the root-group confirmation weight divided by the scaled baseline:
+Prefer the chain-provided `current_epoch_stats.confirmationPoCRatio` when it has been fetched and cached.
+
+When the exact chain ratio is not available yet, use the local fallback: root-group confirmation weight divided by the scaled baseline, then apply the chain PoC deviation coefficient:
 
 ```python
-confirmation_ratio = confirmation_weight / weight_to_confirm
+confirmation_ratio = (confirmation_weight / weight_to_confirm) / 0.909
 confirmation_ratio_capped = min(confirmation_ratio, 1.0)
 ```
 
@@ -197,9 +200,12 @@ Changes:
 3. Build scaled epoch weight data from subgroup responses.
 4. Set participant `weight` from root `validation_weights[].weight`.
 5. Set `weight_to_confirm` from scaled model subgroup sums.
-6. Set `confirmation_poc_ratio` from root `confirmation_weight / weight_to_confirm`.
-7. Return model-specific scaled MLNode weights in participant details.
-8. Compute collateral cards from `weight_to_confirm`, root `weight`, collateral params, and deposited collateral.
+6. Set fallback `confirmation_poc_ratio` from `(root confirmation_weight / weight_to_confirm) / 0.909`.
+7. Background confirmation polling fetches per-participant exact `current_epoch_stats.confirmationPoCRatio` and stores it in the existing confirmation cache.
+8. Main page responses use cached exact confirmation ratio when available; otherwise they keep the local fallback.
+9. Participant detail responses fetch the exact per-participant confirmation ratio inline because that page only needs one participant.
+10. Return model-specific scaled MLNode weights in participant details.
+11. Compute collateral cards from `weight_to_confirm`, root `weight`, collateral params, and deposited collateral.
 
 ### Frontend
 
@@ -239,15 +245,18 @@ Coverage:
 3. Backend fetches inference params for model scale factors and collateral params.
 4. Backend fetches one subgroup epoch group per model in `sub_group_models[]`.
 5. Backend builds scaled weight data per participant.
-6. Backend merges scaled fields, collateral fields, jail/health fields, and cached detail fields into `ParticipantStats`.
-7. Frontend requests participant data through local `/api/v1/...` endpoints and renders the cards.
+6. Backend computes local fallback confirmation ratio.
+7. Backend merges cached exact confirmation ratio when background polling has fetched it.
+8. Backend merges scaled fields, collateral fields, jail/health fields, and cached detail fields into `ParticipantStats`.
+9. Frontend requests participant data through local `/api/v1/...` endpoints and renders the cards.
 
 ## Key Design Decisions
 
 1. **Root weight is authoritative for `Weight`** - do not approximate final weight from PoC or confirmation data.
 2. **Scaled model subgroup sum is authoritative for `Weight to Confirm`** - raw MLNode PoC sums are no longer the right denominator.
-3. **Confirmation ratio uses different values by design** - numerator is root `confirmation_weight`; denominator is scaled own-model baseline.
-4. **Collateral potential is approximate** - `weight_to_confirm` is the best exposed approximation of own pre-collateral capacity.
-5. **Collateral effective weight is final root weight** - this keeps the visible effective weight aligned with the chain's final participant weight.
-6. **MLNode weights are model-specific** - one physical node can appear multiple times if it contributes to multiple model subgroups.
-7. **Response field names stay stable** - existing frontend cards keep working with minimal API churn.
+3. **Exact confirmation ratio wins** - use chain `current_epoch_stats.confirmationPoCRatio` when cached or when loading a single participant detail page.
+4. **Local confirmation ratio is only a fallback** - numerator is root `confirmation_weight`; denominator is scaled own-model baseline adjusted by the chain PoC deviation coefficient `0.909`.
+5. **Collateral potential is approximate** - `weight_to_confirm` is the best exposed approximation of own pre-collateral capacity.
+6. **Collateral effective weight is final root weight** - this keeps the visible effective weight aligned with the chain's final participant weight.
+7. **MLNode weights are model-specific** - one physical node can appear multiple times if it contributes to multiple model subgroups.
+8. **Response field names stay stable** - existing frontend cards keep working with minimal API churn.

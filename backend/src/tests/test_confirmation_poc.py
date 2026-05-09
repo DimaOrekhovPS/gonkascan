@@ -7,6 +7,7 @@ from backend.models import CurrentEpochStats, ParticipantStats
 from backend.service import (
     InferenceService,
     _calc_participant_collateral_status,
+    _extract_chain_confirmation_ratio,
     _safe_confirmation_ratio,
 )
 
@@ -75,13 +76,31 @@ class TestScaledWeightToConfirm:
 
 
 class TestConfirmationRatio:
-    def test_uses_scaled_denominator_and_caps_at_one(self):
-        assert _safe_confirmation_ratio(50, 100) == 0.5
-        assert _safe_confirmation_ratio(150, 100) == 1.0
+    def test_uses_scaled_denominator_deviation_coefficient_and_caps_at_one(self):
+        assert abs(_safe_confirmation_ratio(48, 100) - 0.528052805280528) < 1e-12
+        assert _safe_confirmation_ratio(91, 100) == 1.0
 
     def test_returns_none_without_denominator(self):
         assert _safe_confirmation_ratio(50, 0) is None
         assert _safe_confirmation_ratio(None, 100) is None
+
+    def test_decodes_chain_confirmation_ratio(self):
+        participant_info = {
+            "current_epoch_stats": {
+                "confirmationPoCRatio": {
+                    "value": "52",
+                    "exponent": -2,
+                }
+            }
+        }
+
+        assert _extract_chain_confirmation_ratio(participant_info) == 0.52
+
+    def test_missing_chain_confirmation_ratio_returns_none(self):
+        assert _extract_chain_confirmation_ratio({}) is None
+        assert _extract_chain_confirmation_ratio({
+            "current_epoch_stats": {"confirmationPoCRatio": None}
+        }) is None
 
 
 class TestCollateralStatus:
