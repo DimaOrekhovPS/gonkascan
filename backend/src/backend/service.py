@@ -75,6 +75,7 @@ getcontext().prec = 60
 
 BASE_DECIMALS = Decimal("1e9")
 QUOTE_DECIMALS = Decimal("1e6")
+POC_DEVIATION_COEFF = Decimal("0.909")
 
 logger = logging.getLogger(__name__)
 
@@ -133,7 +134,7 @@ def _safe_confirmation_ratio(
 ) -> Optional[float]:
     if confirmation_weight is None or weight_to_confirm == 0:
         return None
-    ratio = Decimal(confirmation_weight) / Decimal(weight_to_confirm)
+    ratio = (Decimal(confirmation_weight) / Decimal(weight_to_confirm)) / POC_DEVIATION_COEFF
     return float(min(ratio, Decimal(1)))
 
 

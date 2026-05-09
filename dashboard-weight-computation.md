@@ -28,7 +28,7 @@ dashboard.confirmation_ratio_percent
 ml_nodes[].scaled_weight
 ```
 
-`dashboard.confirmation_ratio_percent` is computed as `chain.confirmation_weight / dashboard.weight_to_confirm * 100`, capped at `100`.
+`dashboard.confirmation_ratio_percent` is computed as `(chain.confirmation_weight / dashboard.weight_to_confirm) / 0.909 * 100`, capped at `100`.
 
 ### Weight
 
@@ -181,10 +181,10 @@ Then apply the model scale factor and floor.
 
 ### Confirmation Ratio
 
-Compute against the scaled own-ML-node confirmation baseline:
+Compute against the scaled own-ML-node confirmation baseline and apply the chain PoC deviation coefficient:
 
 ```text
-confirmation_ratio = confirmation_weight / weight_to_confirm
+confirmation_ratio = (confirmation_weight / weight_to_confirm) / 0.909
 confirmation_ratio_capped = min(confirmation_ratio, 1.0)
 ```
 

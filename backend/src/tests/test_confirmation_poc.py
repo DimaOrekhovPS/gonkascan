@@ -75,9 +75,9 @@ class TestScaledWeightToConfirm:
 
 
 class TestConfirmationRatio:
-    def test_uses_scaled_denominator_and_caps_at_one(self):
-        assert _safe_confirmation_ratio(50, 100) == 0.5
-        assert _safe_confirmation_ratio(150, 100) == 1.0
+    def test_uses_scaled_denominator_deviation_coefficient_and_caps_at_one(self):
+        assert abs(_safe_confirmation_ratio(48, 100) - 0.528052805280528) < 1e-12
+        assert _safe_confirmation_ratio(91, 100) == 1.0
 
     def test_returns_none_without_denominator(self):
         assert _safe_confirmation_ratio(50, 0) is None

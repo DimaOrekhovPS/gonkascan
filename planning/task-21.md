@@ -17,7 +17,7 @@ The chain now computes final participant weight using multi-model PoC, model sca
 
 - Participant `Weight` uses the chain root epoch group weight.
 - `Weight to Confirm` uses scaled model subgroup weights.
-- `Confirmation Ratio` uses `confirmation_weight / weight_to_confirm`, capped at 100%.
+- `Confirmation Ratio` uses `(confirmation_weight / weight_to_confirm) / 0.909`, capped at 100%.
 - MLNode cards display scaled node weight.
 - Collateral status uses `weight_to_confirm` as potential weight and root `weight` as effective weight.
 
@@ -125,10 +125,10 @@ This is the scaled own-model PoC baseline used as the confirmation denominator.
 
 ### Confirmation Ratio
 
-Use the root-group confirmation weight divided by the scaled baseline:
+Use the root-group confirmation weight divided by the scaled baseline, then apply the chain PoC deviation coefficient:
 
 ```python
-confirmation_ratio = confirmation_weight / weight_to_confirm
+confirmation_ratio = (confirmation_weight / weight_to_confirm) / 0.909
 confirmation_ratio_capped = min(confirmation_ratio, 1.0)
 ```
 
@@ -197,7 +197,7 @@ Changes:
 3. Build scaled epoch weight data from subgroup responses.
 4. Set participant `weight` from root `validation_weights[].weight`.
 5. Set `weight_to_confirm` from scaled model subgroup sums.
-6. Set `confirmation_poc_ratio` from root `confirmation_weight / weight_to_confirm`.
+6. Set `confirmation_poc_ratio` from `(root confirmation_weight / weight_to_confirm) / 0.909`.
 7. Return model-specific scaled MLNode weights in participant details.
 8. Compute collateral cards from `weight_to_confirm`, root `weight`, collateral params, and deposited collateral.
 
@@ -246,7 +246,7 @@ Coverage:
 
 1. **Root weight is authoritative for `Weight`** - do not approximate final weight from PoC or confirmation data.
 2. **Scaled model subgroup sum is authoritative for `Weight to Confirm`** - raw MLNode PoC sums are no longer the right denominator.
-3. **Confirmation ratio uses different values by design** - numerator is root `confirmation_weight`; denominator is scaled own-model baseline.
+3. **Confirmation ratio uses different values by design** - numerator is root `confirmation_weight`; denominator is scaled own-model baseline adjusted by the chain PoC deviation coefficient `0.909`.
 4. **Collateral potential is approximate** - `weight_to_confirm` is the best exposed approximation of own pre-collateral capacity.
 5. **Collateral effective weight is final root weight** - this keeps the visible effective weight aligned with the chain's final participant weight.
 6. **MLNode weights are model-specific** - one physical node can appear multiple times if it contributes to multiple model subgroups.
