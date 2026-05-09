@@ -111,6 +111,10 @@ export interface MLNodeInfo {
   host: string;
   port: string;
   poc_weight?: number;
+  raw_poc_weight?: number | null;
+  scaled_weight?: number | null;
+  model_id?: string | null;
+  weight_scale_factor?: string | null;
 }
 
 export interface ParticipantDetailsResponse {

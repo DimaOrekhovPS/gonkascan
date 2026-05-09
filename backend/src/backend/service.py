@@ -14,7 +14,7 @@ import geoip2.database
 from collections import defaultdict
 from geoip2.errors import AddressNotFoundError
 from typing import Optional, List, Dict, Any
-from decimal import Decimal, getcontext, ROUND_CEILING
+from decimal import Decimal, getcontext, ROUND_CEILING, ROUND_FLOOR
 from datetime import datetime, timezone, timedelta
 import importlib
 import pkgutil
@@ -104,19 +104,6 @@ def build_registry(root_pkg: str) -> dict[str, type[Message]]:
 
 REGISTRY = build_registry("gonka_protos")
 
-# ml_nodes_data structure: [{ml_nodes: [node, ...]}, {ml_nodes: [...]}]
-# Sum poc_weight for nodes where timeslot_allocation[1] == False
-def _calculate_weight_to_confirm(ml_nodes_data: List[Dict]) -> int:
-    weight = 0
-    for ml_node_group in ml_nodes_data:
-        nested_nodes = ml_node_group.get("ml_nodes", [])
-        for node in nested_nodes:
-            timeslot_allocation = node.get("timeslot_allocation", [])
-            if len(timeslot_allocation) > 1 and timeslot_allocation[1] == False:
-                weight += node.get("poc_weight", 0)
-    return weight
-
-
 def _extract_ml_nodes_map(ml_nodes_data: List[Dict]) -> Dict[str, int]:
     result = {}
     for wrapper in ml_nodes_data:
@@ -128,42 +115,61 @@ def _extract_ml_nodes_map(ml_nodes_data: List[Dict]) -> Dict[str, int]:
                     result[node_id] = poc_weight
     return result
 
-def _decode_fixed_point(fp: Dict[str, Any]) -> Decimal:
-    """
-    将 {value: "42", exponent: -1} 还原为 Decimal("4.2")
-    """
+
+def _int_field(data: Dict[str, Any], key: str, default: int = 0) -> int:
+    try:
+        return int(data.get(key, default) or default)
+    except (TypeError, ValueError):
+        return default
+
+
+def _floor_int(value: Decimal) -> int:
+    return int(value.to_integral_value(rounding=ROUND_FLOOR))
+
+
+def _safe_confirmation_ratio(
+    confirmation_weight: Optional[int],
+    weight_to_confirm: int,
+) -> Optional[float]:
+    if confirmation_weight is None or weight_to_confirm == 0:
+        return None
+    ratio = Decimal(confirmation_weight) / Decimal(weight_to_confirm)
+    return float(min(ratio, Decimal(1)))
+
+
+def _validation_weight_map(epoch_group_data: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    return {
+        validation_weight.get("member_address"): validation_weight
+        for validation_weight in epoch_group_data.get("validation_weights", [])
+        if validation_weight.get("member_address")
+    }
+
+
+def _model_scale_factors(params: Dict[str, Any]) -> Dict[str, Decimal]:
+    return {
+        model["model_id"]: _decode_fixed_point(model.get("weight_scale_factor"))
+        for model in params.get("poc_params", {}).get("models", [])
+        if model.get("model_id")
+    }
+
+
+def _scale_weight(raw_weight: int, scale_factor: Decimal) -> int:
+    return _floor_int(Decimal(raw_weight) * scale_factor)
+
+def _decode_fixed_point(fp: Optional[Dict[str, Any]]) -> Decimal:
+    if not fp:
+        return Decimal(1)
     v = Decimal(str(fp["value"]))
     e = int(fp["exponent"])
     return v * (Decimal(10) ** Decimal(e))
 
 
-def _extract_confirmation_poc_ratio(participant_info: Dict[str, Any]) -> Optional[float]:
-    """
-    Read the chain's pre-computed confirmation PoC ratio from a participant
-    response. The field lives at `current_epoch_stats.confirmationPoCRatio`
-    and is encoded as a Cosmos Dec object: {"value": "<int>", "exponent": <int>}.
-
-    This is the canonical value used by the chain for slashing/punishments,
-    and reflects all internal adjustments to validation weight. Computing the
-    ratio locally from raw `confirmation_weight / weight` does NOT match the
-    chain's logic (it can exceed 100%), so we always use the on-chain value.
-    """
-    stats = participant_info.get("current_epoch_stats") or {}
-    fp = stats.get("confirmationPoCRatio")
-    if not isinstance(fp, dict) or "value" not in fp or "exponent" not in fp:
-        return None
-    try:
-        return float(_decode_fixed_point(fp))
-    except (ValueError, TypeError, KeyError) as e:
-        logger.warning(f"Failed to decode confirmationPoCRatio {fp}: {e}")
-        return None
-
 def _calc_participant_collateral_status(
     collateral_params: Dict[str, Any],
-    weight: Dict[str, Any],
+    potential_weight_value: int,
     collateral_resp: Dict[str, Any],
 ) -> CollateralStatus:
-    potential_weight = int(weight)
+    potential_weight = Decimal(potential_weight_value)
 
     base_ratio = _decode_fixed_point(collateral_params["base_weight_ratio"])
     per_weight = _decode_fixed_point(collateral_params["collateral_per_weight_unit"])
@@ -172,10 +178,17 @@ def _calc_participant_collateral_status(
 
     one = Decimal(1)
 
+    base_weight = potential_weight * base_ratio
     eligible_weight = potential_weight * (one - base_ratio)
 
-    needed_collateral = eligible_weight * per_weight
-    needed_collateral = int(needed_collateral.to_integral_value(rounding=ROUND_CEILING))
+    if per_weight == 0:
+        activated_weight = eligible_weight if deposited > 0 else Decimal(0)
+        needed_collateral = 0 if eligible_weight == 0 else 1
+    else:
+        activated_weight = min(eligible_weight, deposited / per_weight)
+        needed_collateral = int(
+            (eligible_weight * per_weight).to_integral_value(rounding=ROUND_CEILING)
+        )
 
     if needed_collateral <= 0:
         collateral_ratio = one
@@ -184,11 +197,11 @@ def _calc_participant_collateral_status(
         if collateral_ratio > one:
             collateral_ratio = one
 
-    effective_weight = (potential_weight * base_ratio) + (eligible_weight * collateral_ratio)
+    effective_weight = base_weight + activated_weight
 
     return {
-        "potential_weight": potential_weight,
-        "effective_weight": int(effective_weight),
+        "potential_weight": int(potential_weight),
+        "effective_weight": _floor_int(effective_weight),
         "collateral_ratio": float(collateral_ratio),
         "needed_ngonka": str(needed_collateral),
         "collateral_amount": collateral_resp
@@ -324,6 +337,84 @@ class InferenceService:
             return canonical_height
         
         return requested_height
+
+    async def _build_scaled_epoch_weight_data(
+        self,
+        epoch_id: int,
+        params: Dict[str, Any],
+        root_epoch_group_data: Dict[str, Any],
+        height: Optional[int] = None,
+    ) -> Dict[str, Dict[str, Any]]:
+        scale_factors = _model_scale_factors(params)
+        participants: Dict[str, Dict[str, Any]] = defaultdict(
+            lambda: {
+                "weight_to_confirm": 0,
+                "models": [],
+                "ml_nodes": [],
+                "ml_nodes_map": defaultdict(int),
+            }
+        )
+
+        model_ids = root_epoch_group_data.get("sub_group_models", [])
+        subgroup_epoch = int(root_epoch_group_data.get("epoch_index", epoch_id))
+
+        for model_id in model_ids:
+            try:
+                subgroup_resp = await self.client.get_epoch_group_data(
+                    subgroup_epoch,
+                    height=height,
+                    model_id=model_id,
+                )
+                subgroup = subgroup_resp.get("epoch_group_data", {})
+            except Exception as e:
+                logger.warning(f"Failed to fetch subgroup weights for {model_id}: {e}")
+                continue
+
+            scale_factor = scale_factors.get(model_id, Decimal(1))
+            for member in subgroup.get("validation_weights", []):
+                participant_id = member.get("member_address")
+                if not participant_id:
+                    continue
+
+                raw_model_weight = _int_field(member, "weight")
+                scaled_model_weight = _scale_weight(raw_model_weight, scale_factor)
+                participant_data = participants[participant_id]
+                participant_data["weight_to_confirm"] += scaled_model_weight
+                participant_data["models"].append(
+                    {
+                        "model_id": model_id,
+                        "raw_model_weight": raw_model_weight,
+                        "scaled_model_weight": scaled_model_weight,
+                        "weight_scale_factor": str(scale_factor),
+                    }
+                )
+
+                for index, node in enumerate(member.get("ml_nodes", [])):
+                    raw_node_weight = _int_field(node, "poc_weight")
+                    scaled_node_weight = _scale_weight(raw_node_weight, scale_factor)
+                    node_id = node.get("node_id") or node.get("id") or f"{model_id}#{index}"
+
+                    participant_data["ml_nodes"].append(
+                        {
+                            "local_id": node_id,
+                            "node_id": node_id,
+                            "model_id": model_id,
+                            "models": [model_id],
+                            "raw_poc_weight": raw_node_weight,
+                            "poc_weight": scaled_node_weight,
+                            "scaled_weight": scaled_node_weight,
+                            "weight_scale_factor": str(scale_factor),
+                        }
+                    )
+                    participant_data["ml_nodes_map"][node_id] += scaled_node_weight
+
+        return {
+            participant_id: {
+                **data,
+                "ml_nodes_map": dict(data["ml_nodes_map"]),
+            }
+            for participant_id, data in participants.items()
+        }
     
     async def _load_cached_epoch_from_db(self, epoch_id: int) -> Optional[InferenceResponse]:
         try:
@@ -347,6 +438,10 @@ class InferenceService:
                         current_epoch_stats=CurrentEpochStats(**stats_dict["current_epoch_stats"]),
                         seed_signature=stats_dict.get("_seed_signature"),
                         ml_nodes_map=stats_dict.get("_ml_nodes_map", {}),
+                        weight_to_confirm=stats_dict.get("weight_to_confirm"),
+                        confirmation_weight=stats_dict.get("confirmation_weight"),
+                        confirmation_poc_ratio=stats_dict.get("confirmation_poc_ratio"),
+                        participant_status=stats_dict.get("participant_status"),
                         collateral_status=CollateralStatus(**stats_dict["collateral_status"])
                     )
                     participants_stats.append(participant)
@@ -405,6 +500,19 @@ class InferenceService:
             
             all_participants_data = await self.client.get_all_participants(height=height)
             participants_list = all_participants_data.get("participant", [])
+            params = await self.client.get_inference_params()
+            params_data = params["params"]
+            collateral_params = params_data["collateral_params"]
+            root_group = (
+                await self.client.get_current_epoch_group_data()
+            ).get("epoch_group_data", {})
+            root_weights = _validation_weight_map(root_group)
+            scaled_weights = await self._build_scaled_epoch_weight_data(
+                epoch_id,
+                params_data,
+                root_group,
+                height=height,
+            )
             
             active_indices = {
                 p["index"] for p in epoch_data["active_participants"]["participants"]
@@ -412,11 +520,11 @@ class InferenceService:
             
             epoch_participant_data = {
                 p["index"]: {
-                    "weight": p.get("weight", 0),
+                    "weight": _int_field(root_weights.get(p["index"], p), "weight"),
                     "models": p.get("models", []),
                     "validator_key": p.get("validator_key"),
                     "seed_signature": p.get("seed", {}).get("signature"),
-                    "ml_nodes_map": _extract_ml_nodes_map(p.get("ml_nodes", []))
+                    "ml_nodes_map": scaled_weights.get(p["index"], {}).get("ml_nodes_map", {})
                 }
                 for p in epoch_data["active_participants"]["participants"]
             }
@@ -425,16 +533,27 @@ class InferenceService:
                 p for p in participants_list if p["index"] in active_indices
             ]
 
-            params = await self.client.get_inference_params()
-            collateral_params = params["params"]["collateral_params"]
             participants_stats = []
             stats_for_saving = []
             for p in active_participants:
                 try:
                     epoch_data_for_participant = epoch_participant_data.get(p["index"], {})
+                    scaled_data = scaled_weights.get(p["index"], {})
+                    root_member = root_weights.get(p["index"], {})
+                    weight_to_confirm = int(scaled_data.get("weight_to_confirm", 0))
+                    confirmation_weight_raw = root_member.get("confirmation_weight")
+                    confirmation_weight = (
+                        int(confirmation_weight_raw)
+                        if confirmation_weight_raw is not None
+                        else None
+                    )
+                    confirmation_poc_ratio = _safe_confirmation_ratio(
+                        confirmation_weight,
+                        weight_to_confirm,
+                    )
                     collateral_resp = await self.client.get_participant_collateral(p["index"])
                     collateral = _calc_participant_collateral_status(collateral_params, 
-                        epoch_data_for_participant.get("weight", 0), collateral_resp)
+                        weight_to_confirm, collateral_resp)
                     
                     participant = ParticipantStats(
                         index=p["index"],
@@ -447,6 +566,9 @@ class InferenceService:
                         current_epoch_stats=CurrentEpochStats(**p["current_epoch_stats"]),
                         seed_signature=epoch_data_for_participant.get("seed_signature"),
                         ml_nodes_map=epoch_data_for_participant.get("ml_nodes_map", {}),
+                        weight_to_confirm=weight_to_confirm,
+                        confirmation_weight=confirmation_weight,
+                        confirmation_poc_ratio=confirmation_poc_ratio,
                         collateral_status=CollateralStatus(**collateral)
                     )
                     participants_stats.append(participant)
@@ -457,6 +579,9 @@ class InferenceService:
                     stats_dict["validator_key"] = epoch_data_for_participant.get("validator_key")
                     stats_dict["seed_signature"] = epoch_data_for_participant.get("seed_signature")
                     stats_dict["_ml_nodes_map"] = epoch_data_for_participant.get("ml_nodes_map", {})
+                    stats_dict["weight_to_confirm"] = weight_to_confirm
+                    stats_dict["confirmation_weight"] = confirmation_weight
+                    stats_dict["confirmation_poc_ratio"] = confirmation_poc_ratio
                     stats_dict["collateral_status"] = collateral
                     stats_for_saving.append(stats_dict)
                 except Exception as e:
@@ -606,17 +731,28 @@ class InferenceService:
             participants_list = all_participants_data.get("participant", [])
             
             epoch_data = await self.get_epoch_participants(epoch_id)
+            params = (await self.client.get_inference_params())["params"]
+            root_group = (
+                await self.client.get_epoch_group_data(epoch_id, height=target_height)
+            ).get("epoch_group_data", {})
+            root_weights = _validation_weight_map(root_group)
+            scaled_weights = await self._build_scaled_epoch_weight_data(
+                epoch_id,
+                params,
+                root_group,
+                height=target_height,
+            )
             active_indices = {
                 p["index"] for p in epoch_data["active_participants"]["participants"]
             }
             
             epoch_participant_data = {
                 p["index"]: {
-                    "weight": p.get("weight", 0),
+                    "weight": _int_field(root_weights.get(p["index"], p), "weight"),
                     "models": p.get("models", []),
                     "validator_key": p.get("validator_key"),
                     "seed_signature": p.get("seed", {}).get("signature"),
-                    "ml_nodes_map": _extract_ml_nodes_map(p.get("ml_nodes", []))
+                    "ml_nodes_map": scaled_weights.get(p["index"], {}).get("ml_nodes_map", {})
                 }
                 for p in epoch_data["active_participants"]["participants"]
             }
@@ -630,6 +766,19 @@ class InferenceService:
             for p in active_participants:
                 try:
                     epoch_data_for_participant = epoch_participant_data.get(p["index"], {})
+                    scaled_data = scaled_weights.get(p["index"], {})
+                    root_member = root_weights.get(p["index"], {})
+                    weight_to_confirm = int(scaled_data.get("weight_to_confirm", 0))
+                    confirmation_weight_raw = root_member.get("confirmation_weight")
+                    confirmation_weight = (
+                        int(confirmation_weight_raw)
+                        if confirmation_weight_raw is not None
+                        else None
+                    )
+                    confirmation_poc_ratio = _safe_confirmation_ratio(
+                        confirmation_weight,
+                        weight_to_confirm,
+                    )
                     
                     participant = ParticipantStats(
                         index=p["index"],
@@ -641,7 +790,10 @@ class InferenceService:
                         models=epoch_data_for_participant.get("models", []),
                         current_epoch_stats=CurrentEpochStats(**p["current_epoch_stats"]),
                         seed_signature=epoch_data_for_participant.get("seed_signature"),
-                        ml_nodes_map=epoch_data_for_participant.get("ml_nodes_map", {})
+                        ml_nodes_map=epoch_data_for_participant.get("ml_nodes_map", {}),
+                        weight_to_confirm=weight_to_confirm,
+                        confirmation_weight=confirmation_weight,
+                        confirmation_poc_ratio=confirmation_poc_ratio,
                     )
                     participants_stats.append(participant)
                     
@@ -651,6 +803,9 @@ class InferenceService:
                     stats_dict["validator_key"] = epoch_data_for_participant.get("validator_key")
                     stats_dict["seed_signature"] = epoch_data_for_participant.get("seed_signature")
                     stats_dict["_ml_nodes_map"] = epoch_data_for_participant.get("ml_nodes_map", {})
+                    stats_dict["weight_to_confirm"] = weight_to_confirm
+                    stats_dict["confirmation_weight"] = confirmation_weight
+                    stats_dict["confirmation_poc_ratio"] = confirmation_poc_ratio
                     stats_for_saving.append(stats_dict)
                 except Exception as e:
                     logger.warning(f"Failed to parse participant {p.get('index', 'unknown')}: {e}")
@@ -661,13 +816,15 @@ class InferenceService:
                 participants_stats=stats_for_saving
             )
             
+            active_participants_list = epoch_data["active_participants"]["participants"]
+
             if height is None and not is_finished:
                 data = await self.client.get_epoch_group_data(epoch_id)
-                epoch_data = data.get("epoch_group_data", {})
-                await self.cache_db.mark_epoch_finished(epoch_id, target_height, epoch_data)
+                finished_epoch_group = data.get("epoch_group_data", {})
+                await self.cache_db.mark_epoch_finished(epoch_id, target_height, finished_epoch_group)
             
-            participants_stats = await self.merge_jail_and_health_data(epoch_id, participants_stats, target_height, epoch_data["active_participants"]["participants"])
-            participants_stats = await self.merge_confirmation_data(epoch_id, participants_stats, target_height, epoch_data["active_participants"]["participants"])
+            participants_stats = await self.merge_jail_and_health_data(epoch_id, participants_stats, target_height, active_participants_list)
+            participants_stats = await self.merge_confirmation_data(epoch_id, participants_stats, target_height, active_participants_list)
             
             total_rewards_gnk = await self.cache_db.get_epoch_total_rewards(epoch_id)
             if total_rewards_gnk is None:
@@ -965,6 +1122,44 @@ class InferenceService:
                     fetch_tasks.append(('hardware', None, self.client.get_hardware_nodes(participant_id)))
             
             cached_stats = await self.cache_db.get_participant_stats(participant_id, epoch_id, height)
+            scaled_detail = {}
+            scaled_ml_nodes_map = {}
+            try:
+                params = (await self.client.get_inference_params())["params"]
+                if is_current:
+                    root_group = (
+                        await self.client.get_current_epoch_group_data()
+                    ).get("epoch_group_data", {})
+                else:
+                    root_group = (
+                        await self.client.get_epoch_group_data(epoch_id, height=height)
+                    ).get("epoch_group_data", {})
+
+                root_member = _validation_weight_map(root_group).get(participant_id, {})
+                participant.weight = _int_field(root_member, "weight", participant.weight)
+
+                scaled_epoch = await self._build_scaled_epoch_weight_data(
+                    epoch_id,
+                    params,
+                    root_group,
+                    height=height,
+                )
+                scaled_detail = scaled_epoch.get(participant_id, {})
+                scaled_ml_nodes_map = scaled_detail.get("ml_nodes_map", {})
+                if scaled_detail:
+                    participant.weight_to_confirm = int(scaled_detail.get("weight_to_confirm", 0))
+                    confirmation_weight_raw = root_member.get("confirmation_weight")
+                    participant.confirmation_weight = (
+                        int(confirmation_weight_raw)
+                        if confirmation_weight_raw is not None
+                        else None
+                    )
+                    participant.confirmation_poc_ratio = _safe_confirmation_ratio(
+                        participant.confirmation_weight,
+                        participant.weight_to_confirm,
+                    )
+            except Exception as e:
+                logger.warning(f"Failed to compute scaled participant detail weights for {participant_id}: {e}")
             if fetch_tasks:
                 results = await asyncio.gather(*[task[2] for task in fetch_tasks], return_exceptions=True)
                 
@@ -992,7 +1187,7 @@ class InferenceService:
                             logger.warning(f"Failed to save warm keys for {participant_id}: {e}")
                     elif task_type == 'hardware':
                         hardware_nodes_data = result if result else []
-                        ml_nodes_map = participant.ml_nodes_map if participant.ml_nodes_map else {}
+                        ml_nodes_map = scaled_ml_nodes_map or (participant.ml_nodes_map if participant.ml_nodes_map else {})
                         if not ml_nodes_map:
                             if cached_stats:
                                 for s in cached_stats:
@@ -1062,6 +1257,8 @@ class InferenceService:
             ]
             
             ml_nodes_map = participant.ml_nodes_map if participant.ml_nodes_map else {}
+            if scaled_ml_nodes_map:
+                ml_nodes_map = scaled_ml_nodes_map
             if not ml_nodes_map:
                 if cached_stats:
                     for s in cached_stats:
@@ -1070,22 +1267,43 @@ class InferenceService:
                             break
             
             ml_nodes = []
-            for node in (hardware_nodes_data or []):
+            hardware_by_id = {
+                node.get("local_id", ""): node
+                for node in (hardware_nodes_data or [])
+            }
+            scaled_nodes = scaled_detail.get("ml_nodes", [])
+
+            if scaled_nodes:
+                nodes_to_render = scaled_nodes
+            else:
+                nodes_to_render = hardware_nodes_data or []
+
+            for node in nodes_to_render:
                 local_id = node.get("local_id", "")
-                poc_weight = ml_nodes_map.get(local_id) or node.get("poc_weight")
+                hardware_node = hardware_by_id.get(local_id, {})
+                poc_weight = (
+                    node.get("scaled_weight")
+                    if node.get("scaled_weight") is not None
+                    else ml_nodes_map.get(local_id) if local_id in ml_nodes_map else node.get("poc_weight")
+                )
+                raw_poc_weight = node.get("raw_poc_weight")
 
                 hardware_list = [
                     HardwareInfo(type=hw["type"], count=hw["count"])
-                    for hw in node.get("hardware", [])
+                    for hw in hardware_node.get("hardware", node.get("hardware", []))
                 ]
                 ml_nodes.append(MLNodeInfo(
                     local_id=local_id,
-                    status=node.get("status", ""),
-                    models=node.get("models", []),
+                    status=hardware_node.get("status", node.get("status", "")),
+                    models=node.get("models", hardware_node.get("models", [])),
                     hardware=hardware_list,
-                    host=node.get("host", ""),
-                    port=node.get("port", ""),
-                    poc_weight=poc_weight
+                    host=hardware_node.get("host", node.get("host", "")),
+                    port=hardware_node.get("port", node.get("port", "")),
+                    poc_weight=poc_weight,
+                    raw_poc_weight=raw_poc_weight,
+                    scaled_weight=node.get("scaled_weight"),
+                    model_id=node.get("model_id"),
+                    weight_scale_factor=node.get("weight_scale_factor"),
                 ))
             
             return ParticipantDetailsResponse(
@@ -1406,17 +1624,21 @@ class InferenceService:
     ):
         try:
             epoch_group_data = await self.client.get_epoch_group_data(epoch_id, height)
-            validation_weights = epoch_group_data.get("epoch_group_data", {}).get("validation_weights", [])
+            root_group = epoch_group_data.get("epoch_group_data", {})
+            validation_weights = root_group.get("validation_weights", [])
             
             validation_weights_map = {
                 vw["member_address"]: vw for vw in validation_weights
             }
+            params = (await self.client.get_inference_params())["params"]
+            scaled_weights = await self._build_scaled_epoch_weight_data(
+                epoch_id,
+                params,
+                root_group,
+                height=height,
+            )
             
-            # Pull per-participant data once; we read both `status` and the
-            # chain's pre-computed `confirmationPoCRatio` from the same payload,
-            # so this does not add extra HTTP calls.
             participant_statuses: Dict[str, str] = {}
-            chain_ratios: Dict[str, Optional[float]] = {}
             for participant in active_participants:
                 participant_id = participant["index"]
                 try:
@@ -1425,11 +1647,9 @@ class InferenceService:
                     )
                     participant_info = participant_data.get("participant", {})
                     participant_statuses[participant_id] = participant_info.get("status", "")
-                    chain_ratios[participant_id] = _extract_confirmation_poc_ratio(participant_info)
                 except Exception as e:
                     logger.debug(f"Failed to fetch participant data for {participant_id}: {e}")
                     participant_statuses[participant_id] = ""
-                    chain_ratios[participant_id] = None
 
             confirmation_data = []
 
@@ -1437,8 +1657,9 @@ class InferenceService:
                 participant_id = participant["index"]
 
                 try:
-                    ml_nodes = participant.get("ml_nodes", [])
-                    weight_to_confirm = _calculate_weight_to_confirm(ml_nodes)
+                    weight_to_confirm = int(
+                        scaled_weights.get(participant_id, {}).get("weight_to_confirm", 0)
+                    )
 
                     validation_info = validation_weights_map.get(participant_id, {})
                     confirmation_weight_raw = validation_info.get("confirmation_weight")
@@ -1451,12 +1672,10 @@ class InferenceService:
 
                     participant_status = participant_statuses.get(participant_id, "")
 
-                    # Use the chain-side pre-computed ratio. The raw
-                    # `confirmation_weight / weight` division does not match
-                    # chain logic (the chain applies adjustments to the
-                    # weight before computing this ratio, and this is the
-                    # exact value used for slashing/punishments).
-                    confirmation_poc_ratio = chain_ratios.get(participant_id)
+                    confirmation_poc_ratio = _safe_confirmation_ratio(
+                        confirmation_weight,
+                        weight_to_confirm,
+                    )
                     if confirmation_poc_ratio is not None:
                         confirmation_poc_ratio = round(confirmation_poc_ratio, 4)
 
@@ -1495,9 +1714,12 @@ class InferenceService:
             for participant in participants:
                 conf_info = confirmation_map.get(participant.index)
                 if conf_info:
-                    participant.weight_to_confirm = conf_info["weight_to_confirm"]
-                    participant.confirmation_weight = conf_info["confirmation_weight"]
-                    participant.confirmation_poc_ratio = conf_info["confirmation_poc_ratio"]
+                    if participant.weight_to_confirm is None:
+                        participant.weight_to_confirm = conf_info["weight_to_confirm"]
+                    if participant.confirmation_weight is None:
+                        participant.confirmation_weight = conf_info["confirmation_weight"]
+                    if participant.confirmation_poc_ratio is None:
+                        participant.confirmation_poc_ratio = conf_info["confirmation_poc_ratio"]
                     participant.participant_status = conf_info["participant_status"]
             
             return participants

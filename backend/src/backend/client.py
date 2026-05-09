@@ -94,6 +94,11 @@ class GonkaClient:
     
     async def get_current_epoch_participants(self) -> Dict[str, Any]:
         return await self._make_request("/v1/epochs/current/participants")
+
+    async def get_current_epoch_group_data(self) -> Dict[str, Any]:
+        return await self._make_request(
+            "/chain-api/productscience/inference/inference/current_epoch_group_data"
+        )
     
     async def get_epoch_participants(self, epoch_id: int) -> Dict[str, Any]:
         return await self._make_request(f"/v1/epochs/{epoch_id}/participants")
@@ -491,13 +496,19 @@ class GonkaClient:
     async def get_epoch_group_data(
         self,
         epoch_id: int,
-        height: Optional[int] = None
+        height: Optional[int] = None,
+        model_id: Optional[str] = None
     ) -> Dict[str, Any]:
         path = f"/chain-api/productscience/inference/inference/epoch_group_data/{epoch_id}"
+        params = {"model_id": model_id} if model_id is not None else None
         headers = {}
         if height is not None:
             headers["X-Cosmos-Block-Height"] = str(height)
-        return await self._make_request(path, headers=headers if headers else None)
+        return await self._make_request(
+            path,
+            params=params,
+            headers=headers if headers else None
+        )
 
     async def get_transaction(self, transaction_hash: str) -> Dict[str, Any]:
         path = f"chain-api/cosmos/tx/v1beta1/txs/{transaction_hash}"

@@ -6,6 +6,11 @@ interface MLNodeCardProps {
 }
 
 export function MLNodeCard({ node }: MLNodeCardProps) {
+  const displayWeight = node.scaled_weight ?? node.poc_weight
+  const showRawWeight = node.raw_poc_weight !== undefined &&
+    node.raw_poc_weight !== null &&
+    node.raw_poc_weight !== displayWeight
+
   return (
     <div className="bg-white/[0.02] border border-white/[0.06] rounded-lg p-3 sm:p-4">
       <div className="flex items-start justify-between gap-3 mb-3">
@@ -14,10 +19,13 @@ export function MLNodeCard({ node }: MLNodeCardProps) {
       </div>
 
       <div className="space-y-2">
-        {node.poc_weight !== undefined && node.poc_weight !== null && (
+        {displayWeight !== undefined && displayWeight !== null && (
           <div>
             <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Weight</div>
-            <div className="mt-1 text-sm text-slate-50">{node.poc_weight.toLocaleString()}</div>
+            <div className="mt-1 text-sm text-slate-50">{displayWeight.toLocaleString()}</div>
+            {showRawWeight && (
+              <div className="mt-0.5 text-xs text-slate-500">Raw: {node.raw_poc_weight!.toLocaleString()}</div>
+            )}
           </div>
         )}
 

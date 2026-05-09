@@ -139,6 +139,10 @@ class MLNodeInfo(BaseModel):
     host: str
     port: str
     poc_weight: Optional[int] = None
+    raw_poc_weight: Optional[int] = None
+    scaled_weight: Optional[int] = None
+    model_id: Optional[str] = None
+    weight_scale_factor: Optional[str] = None
 
 
 class ParticipantDetailsResponse(BaseModel):

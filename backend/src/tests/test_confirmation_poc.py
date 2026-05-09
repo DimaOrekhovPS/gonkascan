@@ -1,163 +1,113 @@
+import os
+import tempfile
+
 import pytest
-from backend.service import _calculate_weight_to_confirm, _extract_confirmation_poc_ratio
-from backend.models import ParticipantStats, CurrentEpochStats
+
+from backend.models import CurrentEpochStats, ParticipantStats
+from backend.service import (
+    InferenceService,
+    _calc_participant_collateral_status,
+    _safe_confirmation_ratio,
+)
 
 
-class TestExtractConfirmationPoCRatio:
-    def test_decodes_dec_with_negative_exponent(self):
-        # Real chain response: 924919395994990 * 10^-16 ≈ 0.0925
-        info = {
-            "current_epoch_stats": {
-                "confirmationPoCRatio": {
-                    "value": "924919395994990",
-                    "exponent": -16,
-                }
-            }
-        }
-        ratio = _extract_confirmation_poc_ratio(info)
-        assert ratio is not None
-        assert abs(ratio - 0.0924919395994990) < 1e-12
+class FakeClient:
+    def __init__(self, subgroups):
+        self.subgroups = subgroups
 
-    def test_returns_none_when_field_missing(self):
-        assert _extract_confirmation_poc_ratio({}) is None
-        assert _extract_confirmation_poc_ratio({"current_epoch_stats": {}}) is None
-
-    def test_returns_none_when_dec_malformed(self):
-        info = {"current_epoch_stats": {"confirmationPoCRatio": "not-a-dec"}}
-        assert _extract_confirmation_poc_ratio(info) is None
-
-        info_partial = {"current_epoch_stats": {"confirmationPoCRatio": {"value": "1"}}}
-        assert _extract_confirmation_poc_ratio(info_partial) is None
-
-    def test_one_point_zero_dec(self):
-        # 10000000000000000 * 10^-16 = 1.0 (full confirmation)
-        info = {
-            "current_epoch_stats": {
-                "confirmationPoCRatio": {
-                    "value": "10000000000000000",
-                    "exponent": -16,
-                }
-            }
-        }
-        ratio = _extract_confirmation_poc_ratio(info)
-        assert ratio is not None
-        assert abs(ratio - 1.0) < 1e-12
+    async def get_epoch_group_data(self, epoch_id, height=None, model_id=None):
+        return {"epoch_group_data": self.subgroups[model_id]}
 
 
-class TestCalculateWeightToConfirm:
-    def test_single_group_all_false(self):
-        ml_nodes_data = [
-            {
-                "ml_nodes": [
-                    {"poc_weight": 100, "timeslot_allocation": [True, False]},
-                    {"poc_weight": 200, "timeslot_allocation": [True, False]},
-                    {"poc_weight": 300, "timeslot_allocation": [True, False]}
+class TestScaledWeightToConfirm:
+    @pytest.mark.asyncio
+    async def test_sums_scaled_model_subgroup_weights(self):
+        params = {
+            "poc_params": {
+                "models": [
+                    {
+                        "model_id": "model-a",
+                        "weight_scale_factor": {"value": "5", "exponent": -1},
+                    },
+                    {
+                        "model_id": "model-b",
+                        "weight_scale_factor": {"value": "2", "exponent": 0},
+                    },
                 ]
             }
-        ]
-        
-        result = _calculate_weight_to_confirm(ml_nodes_data)
-        assert result == 600
-    
-    def test_single_group_mixed_allocation(self):
-        ml_nodes_data = [
-            {
-                "ml_nodes": [
-                    {"poc_weight": 100, "timeslot_allocation": [True, False]},
-                    {"poc_weight": 200, "timeslot_allocation": [True, True]},
-                    {"poc_weight": 300, "timeslot_allocation": [True, False]}
-                ]
-            }
-        ]
-        
-        result = _calculate_weight_to_confirm(ml_nodes_data)
-        assert result == 400
-    
-    def test_multiple_groups(self):
-        ml_nodes_data = [
-            {
-                "ml_nodes": [
-                    {"poc_weight": 100, "timeslot_allocation": [True, False]},
-                    {"poc_weight": 200, "timeslot_allocation": [True, True]}
+        }
+        root = {"epoch_index": "7", "sub_group_models": ["model-a", "model-b"]}
+        subgroups = {
+            "model-a": {
+                "validation_weights": [
+                    {
+                        "member_address": "gonka1test",
+                        "weight": "101",
+                        "ml_nodes": [
+                            {"node_id": "node-1", "poc_weight": "51"},
+                            {"node_id": "node-2", "poc_weight": "50"},
+                        ],
+                    }
                 ]
             },
-            {
-                "ml_nodes": [
-                    {"poc_weight": 300, "timeslot_allocation": [True, False]},
-                    {"poc_weight": 400, "timeslot_allocation": [False, False]}
+            "model-b": {
+                "validation_weights": [
+                    {
+                        "member_address": "gonka1test",
+                        "weight": "7",
+                        "ml_nodes": [
+                            {"node_id": "node-1", "poc_weight": "7"},
+                        ],
+                    }
                 ]
-            }
-        ]
-        
-        result = _calculate_weight_to_confirm(ml_nodes_data)
-        assert result == 800
-    
-    def test_empty_ml_nodes(self):
-        ml_nodes_data = []
-        result = _calculate_weight_to_confirm(ml_nodes_data)
-        assert result == 0
-    
-    def test_empty_nested_ml_nodes(self):
-        ml_nodes_data = [
-            {"ml_nodes": []},
-            {"ml_nodes": []}
-        ]
-        result = _calculate_weight_to_confirm(ml_nodes_data)
-        assert result == 0
-    
-    def test_missing_timeslot_allocation(self):
-        ml_nodes_data = [
-            {
-                "ml_nodes": [
-                    {"poc_weight": 100},
-                    {"poc_weight": 200, "timeslot_allocation": [True, False]}
-                ]
-            }
-        ]
-        result = _calculate_weight_to_confirm(ml_nodes_data)
-        assert result == 200
-    
-    def test_short_timeslot_allocation(self):
-        ml_nodes_data = [
-            {
-                "ml_nodes": [
-                    {"poc_weight": 100, "timeslot_allocation": [True]},
-                    {"poc_weight": 200, "timeslot_allocation": [True, False]}
-                ]
-            }
-        ]
-        result = _calculate_weight_to_confirm(ml_nodes_data)
-        assert result == 200
-    
-    def test_real_data_structure(self):
-        ml_nodes_data = [
-            {
-                "ml_nodes": [
-                    {"poc_weight": 703, "timeslot_allocation": [True, False]},
-                    {"poc_weight": 121, "timeslot_allocation": [True, False]},
-                    {"poc_weight": 2433, "timeslot_allocation": [True, False]},
-                    {"poc_weight": 2446, "timeslot_allocation": [True, False]},
-                    {"poc_weight": 2605, "timeslot_allocation": [True, False]},
-                    {"poc_weight": 2285, "timeslot_allocation": [True, False]},
-                    {"poc_weight": 2347, "timeslot_allocation": [True, False]},
-                    {"poc_weight": 2374, "timeslot_allocation": [True, False]},
-                    {"poc_weight": 2276, "timeslot_allocation": [True, False]},
-                    {"poc_weight": 2338, "timeslot_allocation": [True, False]},
-                    {"poc_weight": 2475, "timeslot_allocation": [True, False]}
-                ]
-            }
-        ]
-        
-        result = _calculate_weight_to_confirm(ml_nodes_data)
-        assert result == 22403
+            },
+        }
+
+        service = InferenceService(FakeClient(subgroups), None)
+        result = await service._build_scaled_epoch_weight_data(7, params, root)
+
+        participant = result["gonka1test"]
+        assert participant["weight_to_confirm"] == 64
+        assert participant["ml_nodes_map"] == {"node-1": 39, "node-2": 25}
+        assert participant["ml_nodes"][0]["raw_poc_weight"] == 51
+        assert participant["ml_nodes"][0]["scaled_weight"] == 25
+        assert participant["ml_nodes"][2]["scaled_weight"] == 14
+
+
+class TestConfirmationRatio:
+    def test_uses_scaled_denominator_and_caps_at_one(self):
+        assert _safe_confirmation_ratio(50, 100) == 0.5
+        assert _safe_confirmation_ratio(150, 100) == 1.0
+
+    def test_returns_none_without_denominator(self):
+        assert _safe_confirmation_ratio(50, 0) is None
+        assert _safe_confirmation_ratio(None, 100) is None
+
+
+class TestCollateralApproximation:
+    def test_uses_weight_to_confirm_as_potential_weight(self):
+        collateral_params = {
+            "base_weight_ratio": {"value": "1", "exponent": -1},
+            "collateral_per_weight_unit": {"value": "2", "exponent": 0},
+        }
+        collateral_resp = {"amount": {"amount": "90"}}
+
+        result = _calc_participant_collateral_status(
+            collateral_params,
+            100,
+            collateral_resp,
+        )
+
+        assert result["potential_weight"] == 100
+        assert result["effective_weight"] == 55
+        assert result["needed_ngonka"] == "180"
+        assert result["collateral_ratio"] == 0.5
 
 
 class TestConfirmationDataIntegration:
     @pytest.mark.asyncio
     async def test_save_and_retrieve_confirmation_data(self):
         from backend.database import CacheDB
-        import tempfile
-        import os
         
         with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tmp:
             db_path = tmp.name
