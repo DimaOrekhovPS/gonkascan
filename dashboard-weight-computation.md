@@ -28,7 +28,7 @@ dashboard.confirmation_ratio_percent
 ml_nodes[].scaled_weight
 ```
 
-`dashboard.confirmation_ratio_percent` is computed as `(chain.confirmation_weight / dashboard.weight_to_confirm) / 0.909 * 100`, capped at `100`.
+`dashboard.confirmation_ratio_percent` should use the chain-provided participant `current_epoch_stats.confirmationPoCRatio` when available. Until that exact value is cached, use the local fallback `(chain.confirmation_weight / dashboard.weight_to_confirm) / 0.909 * 100`, capped at `100`.
 
 ### Weight
 
@@ -181,7 +181,13 @@ Then apply the model scale factor and floor.
 
 ### Confirmation Ratio
 
-Compute against the scaled own-ML-node confirmation baseline and apply the chain PoC deviation coefficient:
+Prefer the chain-provided participant `current_epoch_stats.confirmationPoCRatio` when available. This exact value comes from:
+
+```text
+GET /chain-api/productscience/inference/inference/participant/{participant}
+```
+
+For main participant lists, cache this exact value in the background. If it is not cached yet, compute a local fallback against the scaled own-ML-node confirmation baseline and apply the chain PoC deviation coefficient:
 
 ```text
 confirmation_ratio = (confirmation_weight / weight_to_confirm) / 0.909

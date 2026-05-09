@@ -138,6 +138,18 @@ def _safe_confirmation_ratio(
     return float(min(ratio, Decimal(1)))
 
 
+def _extract_chain_confirmation_ratio(participant_info: Dict[str, Any]) -> Optional[float]:
+    stats = participant_info.get("current_epoch_stats") or {}
+    ratio = stats.get("confirmationPoCRatio")
+    if not isinstance(ratio, dict) or "value" not in ratio or "exponent" not in ratio:
+        return None
+    try:
+        decoded = _decode_fixed_point(ratio)
+    except (KeyError, TypeError, ValueError):
+        return None
+    return float(min(decoded, Decimal(1)))
+
+
 def _validation_weight_map(epoch_group_data: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
     return {
         validation_weight.get("member_address"): validation_weight
@@ -1159,6 +1171,23 @@ class InferenceService:
                     )
             except Exception as e:
                 logger.warning(f"Failed to compute scaled participant detail weights for {participant_id}: {e}")
+
+            try:
+                participant_data = await self.client.get_participant_confirmation_data(
+                    participant_id,
+                    height,
+                )
+                participant_info = participant_data.get("participant", {})
+                chain_ratio = _extract_chain_confirmation_ratio(participant_info)
+                if chain_ratio is not None:
+                    participant.confirmation_poc_ratio = chain_ratio
+                participant.participant_status = participant_info.get(
+                    "status",
+                    participant.participant_status,
+                )
+            except Exception as e:
+                logger.debug(f"Failed to fetch exact confirmation ratio for {participant_id}: {e}")
+
             if fetch_tasks:
                 results = await asyncio.gather(*[task[2] for task in fetch_tasks], return_exceptions=True)
                 
@@ -1638,6 +1667,7 @@ class InferenceService:
             )
             
             participant_statuses: Dict[str, str] = {}
+            chain_ratios: Dict[str, Optional[float]] = {}
             for participant in active_participants:
                 participant_id = participant["index"]
                 try:
@@ -1646,9 +1676,13 @@ class InferenceService:
                     )
                     participant_info = participant_data.get("participant", {})
                     participant_statuses[participant_id] = participant_info.get("status", "")
+                    chain_ratios[participant_id] = _extract_chain_confirmation_ratio(
+                        participant_info
+                    )
                 except Exception as e:
                     logger.debug(f"Failed to fetch participant data for {participant_id}: {e}")
                     participant_statuses[participant_id] = ""
+                    chain_ratios[participant_id] = None
 
             confirmation_data = []
 
@@ -1671,10 +1705,7 @@ class InferenceService:
 
                     participant_status = participant_statuses.get(participant_id, "")
 
-                    confirmation_poc_ratio = _safe_confirmation_ratio(
-                        confirmation_weight,
-                        weight_to_confirm,
-                    )
+                    confirmation_poc_ratio = chain_ratios.get(participant_id)
                     if confirmation_poc_ratio is not None:
                         confirmation_poc_ratio = round(confirmation_poc_ratio, 4)
 
@@ -1717,7 +1748,7 @@ class InferenceService:
                         participant.weight_to_confirm = conf_info["weight_to_confirm"]
                     if participant.confirmation_weight is None:
                         participant.confirmation_weight = conf_info["confirmation_weight"]
-                    if participant.confirmation_poc_ratio is None:
+                    if conf_info["confirmation_poc_ratio"] is not None:
                         participant.confirmation_poc_ratio = conf_info["confirmation_poc_ratio"]
                     participant.participant_status = conf_info["participant_status"]
             
