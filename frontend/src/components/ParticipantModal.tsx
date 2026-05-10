@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { ParticipantDetailsResponse, ParticipantInferencesResponse, InferenceDetail, AssetsResponse } from '../types/inference'
+import type { Participant } from '../types/inference'
 import { InferenceDetailModal } from './InferenceDetailModal'
 import { AddressTransactionsTable } from './AddressTransactionsTable'
 import { TransfersTable } from './TransfersTable'
@@ -27,6 +28,18 @@ function getInitialTab(): TabType {
   const tab = new URLSearchParams(window.location.search).get('tab')
   if (tab === 'transfers' || tab === 'transactions' || tab === 'inferences' || tab === 'details') return tab
   return 'details'
+}
+
+function formatConfirmationRate(participant: Participant) {
+  const value = participant.confirmation_poc_ratio
+  const estimate = participant.confirmation_poc_ratio_estimate
+
+  return {
+    label: value !== null && value !== undefined ? `${(value * 100).toFixed(2)}%` : 'N/A',
+    estimateLabel: estimate ? `${(estimate.value * 100).toFixed(2)}% estimated` : null,
+    state: participant.confirmation_poc_ratio_state ?? null,
+    source: participant.confirmation_poc_ratio_source ?? null,
+  }
 }
 
 export function ParticipantModal({ participantId, epochId, currentEpochId }: ParticipantModalProps) {
@@ -73,6 +86,7 @@ export function ParticipantModal({ participantId, epochId, currentEpochId }: Par
   }
 
   const collateralStatus = participant?.collateral_status ?? null
+  const confirmationRate = formatConfirmationRate(participant)
 
   const handleBack = () => {
     const params = new URLSearchParams(window.location.search)
@@ -280,15 +294,26 @@ export function ParticipantModal({ participantId, epochId, currentEpochId }: Par
                     label="Confirmation Ratio"
                     valueClassName={
                       participant.confirmation_poc_ratio !== null &&
-                    participant.confirmation_poc_ratio !== undefined &&
-                    participant.confirmation_poc_ratio < 0.5
+                      participant.confirmation_poc_ratio !== undefined &&
+                      participant.confirmation_poc_ratio_source === 'chain_confirmation_poc_ratio' &&
+                      participant.confirmation_poc_ratio < 0.5
                         ? 'text-red-300'
                         : undefined
                     }
                   >
-                    {participant.confirmation_poc_ratio !== null && participant.confirmation_poc_ratio !== undefined
-                      ? `${(participant.confirmation_poc_ratio * 100).toFixed(2)}%`
-                      : '-'}
+                    <div className="space-y-1">
+                      <div>{confirmationRate.label}</div>
+                      {confirmationRate.estimateLabel && (
+                        <div className="text-xs font-medium text-slate-400 normal-case tracking-normal">
+                          {confirmationRate.estimateLabel}
+                        </div>
+                      )}
+                      {confirmationRate.source && (
+                        <div className="text-[10px] font-medium text-slate-500 normal-case tracking-normal break-words">
+                          {confirmationRate.state ?? confirmationRate.source}
+                        </div>
+                      )}
+                    </div>
                   </StatCard>
 
                   <StatCard label="Node Health">

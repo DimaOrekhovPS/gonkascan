@@ -8,6 +8,7 @@ from backend.service import (
     InferenceService,
     _calc_participant_collateral_status,
     _extract_chain_confirmation_ratio,
+    _get_confirmation_rate,
     _safe_confirmation_ratio,
 )
 
@@ -76,13 +77,45 @@ class TestScaledWeightToConfirm:
 
 
 class TestConfirmationRatio:
-    def test_uses_scaled_denominator_deviation_coefficient_and_caps_at_one(self):
+    def test_uses_deviation_adjusted_confirmation_weight_estimate_and_caps_at_one(self):
         assert abs(_safe_confirmation_ratio(48, 100) - 0.528052805280528) < 1e-12
         assert _safe_confirmation_ratio(91, 100) == 1.0
 
     def test_returns_none_without_denominator(self):
         assert _safe_confirmation_ratio(50, 0) is None
         assert _safe_confirmation_ratio(None, 100) is None
+
+    def test_prefers_chain_confirmation_ratio(self):
+        result = _get_confirmation_rate("INACTIVE", 0.52, 10, 100, True)
+
+        assert result["value"] == 0.52
+        assert result["source"] == "chain_confirmation_poc_ratio"
+        assert result["state"] == "confirmed_by_cpoc"
+        assert result["computed_estimate"] is None
+
+    def test_active_member_uses_confirmation_weight_as_estimate(self):
+        result = _get_confirmation_rate("ACTIVE", None, 80, 100, True)
+
+        assert abs(result["value"] - 0.8800880088008801) < 1e-12
+        assert result["source"] == "chain_confirmation_weight"
+        assert result["state"] == "epoch_baseline_or_accumulated_confirmation_weight"
+        assert abs(result["computed_estimate"]["value"] - 0.8800880088008801) < 1e-12
+
+    def test_inactive_without_chain_ratio_keeps_estimate_non_authoritative(self):
+        result = _get_confirmation_rate("INACTIVE", None, 80, 100, True)
+
+        assert result["value"] is None
+        assert result["source"] == "inactive_without_chain_confirmation_ratio"
+        assert result["state"] == "inactive_no_chain_ratio"
+        assert abs(result["computed_estimate"]["value"] - 0.8800880088008801) < 1e-12
+
+    def test_missing_confirmation_data_returns_unknown(self):
+        result = _get_confirmation_rate("ACTIVE", None, None, 100, True)
+
+        assert result["value"] is None
+        assert result["source"] == "missing_confirmation_data"
+        assert result["state"] == "unknown"
+        assert result["computed_estimate"] is None
 
     def test_decodes_chain_confirmation_ratio(self):
         participant_info = {

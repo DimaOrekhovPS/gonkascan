@@ -31,6 +31,12 @@ export interface CollateralStatus {
   needed_ngonka: string,
 }
 
+export interface ConfirmationRateEstimate {
+  value: number;
+  source: string;
+  state: string;
+}
+
 export interface Participant {
   index: string;
   address: string;
@@ -57,6 +63,9 @@ export interface Participant {
   weight_to_confirm?: number | null;
   confirmation_weight?: number | null;
   confirmation_poc_ratio?: number | null;
+  confirmation_poc_ratio_source?: string | null;
+  confirmation_poc_ratio_state?: string | null;
+  confirmation_poc_ratio_estimate?: ConfirmationRateEstimate | null;
   participant_status?: string | null;
   collateral_status?: CollateralStatus;
 }
