@@ -71,6 +71,7 @@ export function ParticipantTable({ participants, onParticipantSelect, selectedPa
   const shouldHighlightRed = (participant: Participant) => {
     const lowConfirmation = participant.confirmation_poc_ratio !== null
                             && participant.confirmation_poc_ratio !== undefined
+                            && participant.confirmation_poc_ratio_source === 'chain_confirmation_poc_ratio'
                             && participant.confirmation_poc_ratio < 0.5
 
     const totalInferenced = parseInt(participant.current_epoch_stats.inference_count)

@@ -18,6 +18,13 @@ class CollateralStatus(BaseModel):
     collateral_ratio: float
     needed_ngonka: str
 
+
+class ConfirmationRateEstimate(BaseModel):
+    value: float
+    source: str
+    state: str
+
+
 class ParticipantStats(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     
@@ -46,6 +53,9 @@ class ParticipantStats(BaseModel):
     weight_to_confirm: Optional[int] = None
     confirmation_weight: Optional[int] = None
     confirmation_poc_ratio: Optional[float] = None
+    confirmation_poc_ratio_source: Optional[str] = None
+    confirmation_poc_ratio_state: Optional[str] = None
+    confirmation_poc_ratio_estimate: Optional[ConfirmationRateEstimate] = None
     participant_status: Optional[str] = None
     collateral_status: Optional[CollateralStatus] = None
     

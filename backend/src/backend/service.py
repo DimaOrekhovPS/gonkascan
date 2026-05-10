@@ -78,6 +78,7 @@ QUOTE_DECIMALS = Decimal("1e6")
 POC_DEVIATION_COEFF = Decimal("0.909")
 
 logger = logging.getLogger(__name__)
+INACTIVE_CONFIRMATION_STATUSES = {"INACTIVE", "INVALID"}
 
 def is_valid_gonka_address(addr: str, prefix="gonka") -> bool:
     hrp, data = bech32_decode(addr)
@@ -136,6 +137,65 @@ def _safe_confirmation_ratio(
         return None
     ratio = (Decimal(confirmation_weight) / Decimal(weight_to_confirm)) / POC_DEVIATION_COEFF
     return float(min(ratio, Decimal(1)))
+
+
+def _get_confirmation_rate(
+    participant_status: Optional[str],
+    chain_confirmation_ratio: Optional[float],
+    confirmation_weight: Optional[int],
+    weight_to_confirm: Optional[int],
+    is_current_epoch_member: bool,
+) -> Dict[str, Any]:
+    if chain_confirmation_ratio is not None:
+        return {
+            "value": min(chain_confirmation_ratio, 1.0),
+            "source": "chain_confirmation_poc_ratio",
+            "state": "confirmed_by_cpoc",
+            "computed_estimate": None,
+        }
+
+    computed_estimate = None
+    if (
+        is_current_epoch_member
+        and confirmation_weight is not None
+        and weight_to_confirm is not None
+        and weight_to_confirm > 0
+    ):
+        computed_estimate = {
+            "value": _safe_confirmation_ratio(confirmation_weight, weight_to_confirm),
+            "source": "chain_confirmation_weight",
+            "state": "epoch_baseline_or_accumulated_confirmation_weight",
+        }
+
+    if (participant_status or "").upper() in INACTIVE_CONFIRMATION_STATUSES:
+        return {
+            "value": None,
+            "source": "inactive_without_chain_confirmation_ratio",
+            "state": "inactive_no_chain_ratio",
+            "computed_estimate": computed_estimate,
+        }
+
+    if computed_estimate is not None:
+        return {
+            "value": computed_estimate["value"],
+            "source": computed_estimate["source"],
+            "state": computed_estimate["state"],
+            "computed_estimate": computed_estimate,
+        }
+
+    return {
+        "value": None,
+        "source": "missing_confirmation_data",
+        "state": "unknown",
+        "computed_estimate": None,
+    }
+
+
+def _apply_confirmation_rate(participant: ParticipantStats, result: Dict[str, Any]) -> None:
+    participant.confirmation_poc_ratio = result["value"]
+    participant.confirmation_poc_ratio_source = result["source"]
+    participant.confirmation_poc_ratio_state = result["state"]
+    participant.confirmation_poc_ratio_estimate = result["computed_estimate"]
 
 
 def _extract_chain_confirmation_ratio(participant_info: Dict[str, Any]) -> Optional[float]:
@@ -556,9 +616,12 @@ class InferenceService:
                         if confirmation_weight_raw is not None
                         else None
                     )
-                    confirmation_poc_ratio = _safe_confirmation_ratio(
+                    confirmation_rate = _get_confirmation_rate(
+                        p.get("status"),
+                        None,
                         confirmation_weight,
                         weight_to_confirm,
+                        p["index"] in root_weights,
                     )
                     collateral_resp = await self.client.get_participant_collateral(p["index"])
                     collateral = _calc_participant_collateral_status(collateral_params, 
@@ -579,7 +642,11 @@ class InferenceService:
                         ml_nodes_map=epoch_data_for_participant.get("ml_nodes_map", {}),
                         weight_to_confirm=weight_to_confirm,
                         confirmation_weight=confirmation_weight,
-                        confirmation_poc_ratio=confirmation_poc_ratio,
+                        confirmation_poc_ratio=confirmation_rate["value"],
+                        confirmation_poc_ratio_source=confirmation_rate["source"],
+                        confirmation_poc_ratio_state=confirmation_rate["state"],
+                        confirmation_poc_ratio_estimate=confirmation_rate["computed_estimate"],
+                        participant_status=p.get("status"),
                         collateral_status=CollateralStatus(**collateral)
                     )
                     participants_stats.append(participant)
@@ -592,7 +659,11 @@ class InferenceService:
                     stats_dict["_ml_nodes_map"] = epoch_data_for_participant.get("ml_nodes_map", {})
                     stats_dict["weight_to_confirm"] = weight_to_confirm
                     stats_dict["confirmation_weight"] = confirmation_weight
-                    stats_dict["confirmation_poc_ratio"] = confirmation_poc_ratio
+                    stats_dict["confirmation_poc_ratio"] = confirmation_rate["value"]
+                    stats_dict["confirmation_poc_ratio_source"] = confirmation_rate["source"]
+                    stats_dict["confirmation_poc_ratio_state"] = confirmation_rate["state"]
+                    stats_dict["confirmation_poc_ratio_estimate"] = confirmation_rate["computed_estimate"]
+                    stats_dict["participant_status"] = p.get("status")
                     stats_dict["collateral_status"] = collateral
                     stats_for_saving.append(stats_dict)
                 except Exception as e:
@@ -786,9 +857,12 @@ class InferenceService:
                         if confirmation_weight_raw is not None
                         else None
                     )
-                    confirmation_poc_ratio = _safe_confirmation_ratio(
+                    confirmation_rate = _get_confirmation_rate(
+                        p.get("status"),
+                        None,
                         confirmation_weight,
                         weight_to_confirm,
+                        p["index"] in root_weights,
                     )
                     
                     participant = ParticipantStats(
@@ -804,7 +878,11 @@ class InferenceService:
                         ml_nodes_map=epoch_data_for_participant.get("ml_nodes_map", {}),
                         weight_to_confirm=weight_to_confirm,
                         confirmation_weight=confirmation_weight,
-                        confirmation_poc_ratio=confirmation_poc_ratio,
+                        confirmation_poc_ratio=confirmation_rate["value"],
+                        confirmation_poc_ratio_source=confirmation_rate["source"],
+                        confirmation_poc_ratio_state=confirmation_rate["state"],
+                        confirmation_poc_ratio_estimate=confirmation_rate["computed_estimate"],
+                        participant_status=p.get("status"),
                     )
                     participants_stats.append(participant)
                     
@@ -816,7 +894,11 @@ class InferenceService:
                     stats_dict["_ml_nodes_map"] = epoch_data_for_participant.get("ml_nodes_map", {})
                     stats_dict["weight_to_confirm"] = weight_to_confirm
                     stats_dict["confirmation_weight"] = confirmation_weight
-                    stats_dict["confirmation_poc_ratio"] = confirmation_poc_ratio
+                    stats_dict["confirmation_poc_ratio"] = confirmation_rate["value"]
+                    stats_dict["confirmation_poc_ratio_source"] = confirmation_rate["source"]
+                    stats_dict["confirmation_poc_ratio_state"] = confirmation_rate["state"]
+                    stats_dict["confirmation_poc_ratio_estimate"] = confirmation_rate["computed_estimate"]
+                    stats_dict["participant_status"] = p.get("status")
                     stats_for_saving.append(stats_dict)
                 except Exception as e:
                     logger.warning(f"Failed to parse participant {p.get('index', 'unknown')}: {e}")
@@ -1079,7 +1161,13 @@ class InferenceService:
                         participant = p
                         break
                 
-                if participant and participant.confirmation_poc_ratio is None and participant.weight_to_confirm is not None and participant.weight_to_confirm > 0:
+                if (
+                    participant
+                    and participant.confirmation_poc_ratio is None
+                    and participant.weight_to_confirm is not None
+                    and participant.weight_to_confirm > 0
+                    and participant.confirmation_poc_ratio_state in (None, "unknown")
+                ):
                     logger.info(f"Participant {participant_id} missing confirmation data, refreshing")
                     participant = None
             
@@ -1135,6 +1223,8 @@ class InferenceService:
             cached_stats = await self.cache_db.get_participant_stats(participant_id, epoch_id, height)
             scaled_detail = {}
             scaled_ml_nodes_map = {}
+            chain_ratio = None
+            is_current_epoch_member = False
             try:
                 params = (await self.client.get_inference_params())["params"]
                 if is_current:
@@ -1147,6 +1237,7 @@ class InferenceService:
                     ).get("epoch_group_data", {})
 
                 root_member = _validation_weight_map(root_group).get(participant_id, {})
+                is_current_epoch_member = bool(root_member)
                 participant.weight = _int_field(root_member, "weight", participant.weight)
 
                 scaled_epoch = await self._build_scaled_epoch_weight_data(
@@ -1165,10 +1256,14 @@ class InferenceService:
                         if confirmation_weight_raw is not None
                         else None
                     )
-                    participant.confirmation_poc_ratio = _safe_confirmation_ratio(
+                    confirmation_rate = _get_confirmation_rate(
+                        participant.participant_status or participant.status,
+                        None,
                         participant.confirmation_weight,
                         participant.weight_to_confirm,
+                        is_current_epoch_member,
                     )
+                    _apply_confirmation_rate(participant, confirmation_rate)
             except Exception as e:
                 logger.warning(f"Failed to compute scaled participant detail weights for {participant_id}: {e}")
 
@@ -1179,14 +1274,21 @@ class InferenceService:
                 )
                 participant_info = participant_data.get("participant", {})
                 chain_ratio = _extract_chain_confirmation_ratio(participant_info)
-                if chain_ratio is not None:
-                    participant.confirmation_poc_ratio = chain_ratio
                 participant.participant_status = participant_info.get(
                     "status",
                     participant.participant_status,
                 )
             except Exception as e:
                 logger.debug(f"Failed to fetch exact confirmation ratio for {participant_id}: {e}")
+
+            confirmation_rate = _get_confirmation_rate(
+                participant.participant_status or participant.status,
+                chain_ratio,
+                participant.confirmation_weight,
+                participant.weight_to_confirm,
+                is_current_epoch_member,
+            )
+            _apply_confirmation_rate(participant, confirmation_rate)
 
             if fetch_tasks:
                 results = await asyncio.gather(*[task[2] for task in fetch_tasks], return_exceptions=True)
@@ -1741,16 +1843,28 @@ class InferenceService:
             if confirmation_list:
                 confirmation_map = {c["participant_index"]: c for c in confirmation_list}
             
+            active_indices = {p.get("index") for p in active_participants}
+
             for participant in participants:
                 conf_info = confirmation_map.get(participant.index)
+                chain_ratio = None
                 if conf_info:
                     if participant.weight_to_confirm is None:
                         participant.weight_to_confirm = conf_info["weight_to_confirm"]
                     if participant.confirmation_weight is None:
                         participant.confirmation_weight = conf_info["confirmation_weight"]
                     if conf_info["confirmation_poc_ratio"] is not None:
-                        participant.confirmation_poc_ratio = conf_info["confirmation_poc_ratio"]
+                        chain_ratio = conf_info["confirmation_poc_ratio"]
                     participant.participant_status = conf_info["participant_status"]
+
+                confirmation_rate = _get_confirmation_rate(
+                    participant.participant_status or participant.status,
+                    chain_ratio,
+                    participant.confirmation_weight,
+                    participant.weight_to_confirm,
+                    participant.index in active_indices,
+                )
+                _apply_confirmation_rate(participant, confirmation_rate)
             
             return participants
             
