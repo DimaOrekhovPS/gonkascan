@@ -524,8 +524,28 @@ class GonkaClient:
     async def get_balances(self, address: str) -> Dict[str, Any]:
         return await self._make_request(f"/chain-api/cosmos/bank/v1beta1/balances/{address}")
     
-    async def get_participant_collateral(self, participant_id: str) -> Dict[str, Any]:
-        return await self._make_request(f"/chain-api/productscience/inference/collateral/collateral/{participant_id}")
+    async def get_participant_collateral(
+        self,
+        participant_id: str,
+        height: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        path = f"/chain-api/productscience/inference/collateral/collateral/{participant_id}"
+        if height is None:
+            return await self._make_request(path)
+
+        # Try historical state first; fall back to current if the node has
+        # pruned that height (returns non-2xx).
+        try:
+            return await self._make_request(
+                path,
+                headers={"X-Cosmos-Block-Height": str(height)},
+            )
+        except Exception as e:
+            logger.warning(
+                f"Historical collateral query at height {height} failed for "
+                f"{participant_id}, falling back to current: {e}"
+            )
+            return await self._make_request(path)
 
     async def get_total_vesting(self, address: str) -> Dict[str, Any]:
         return await self._make_request(f"/chain-api/productscience/inference/streamvesting/total_vesting/{address}")
@@ -533,8 +553,22 @@ class GonkaClient:
     async def get_vesting_schedule(self, address: str) -> Dict[str, Any]:
         return await self._make_request(f"/chain-api/productscience/inference/streamvesting/vesting_schedule/{address}")
     
-    async def get_inference_params(self):
-        return await self._make_request("/chain-api/productscience/inference/inference/params")
+    async def get_inference_params(self, height: Optional[int] = None) -> Dict[str, Any]:
+        path = "/chain-api/productscience/inference/inference/params"
+        if height is None:
+            return await self._make_request(path)
+
+        try:
+            return await self._make_request(
+                path,
+                headers={"X-Cosmos-Block-Height": str(height)},
+            )
+        except Exception as e:
+            logger.warning(
+                f"Historical inference params query at height {height} failed, "
+                f"falling back to current: {e}"
+            )
+            return await self._make_request(path)
     
     async def get_tallying(self):
         return await self._make_request("/chain-api/cosmos/gov/v1/params/tallying")

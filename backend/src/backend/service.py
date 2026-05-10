@@ -511,7 +511,11 @@ class InferenceService:
                         confirmation_weight=stats_dict.get("confirmation_weight"),
                         confirmation_poc_ratio=stats_dict.get("confirmation_poc_ratio"),
                         participant_status=stats_dict.get("participant_status"),
-                        collateral_status=CollateralStatus(**stats_dict["collateral_status"])
+                        collateral_status=(
+                            CollateralStatus(**stats_dict["collateral_status"])
+                            if stats_dict.get("collateral_status")
+                            else None
+                        ),
                     )
                     participants_stats.append(participant)
                 except Exception as e:
@@ -813,7 +817,8 @@ class InferenceService:
             participants_list = all_participants_data.get("participant", [])
             
             epoch_data = await self.get_epoch_participants(epoch_id)
-            params = (await self.client.get_inference_params())["params"]
+            params = (await self.client.get_inference_params(height=target_height))["params"]
+            collateral_params = params["collateral_params"]
             root_group = (
                 await self.client.get_epoch_group_data(epoch_id, height=target_height)
             ).get("epoch_group_data", {})
@@ -827,7 +832,7 @@ class InferenceService:
             active_indices = {
                 p["index"] for p in epoch_data["active_participants"]["participants"]
             }
-            
+
             epoch_participant_data = {
                 p["index"]: {
                     "weight": _int_field(root_weights.get(p["index"], p), "weight"),
@@ -838,11 +843,31 @@ class InferenceService:
                 }
                 for p in epoch_data["active_participants"]["participants"]
             }
-            
+
             active_participants = [
                 p for p in participants_list if p["index"] in active_indices
             ]
-            
+
+            # Fetch all participants' collateral at the historical height in
+            # parallel to keep the cold-load latency bounded by the slowest
+            # single RPC instead of the sum of N sequential RPCs.
+            collateral_responses = await asyncio.gather(
+                *(
+                    self.client.get_participant_collateral(p["index"], height=target_height)
+                    for p in active_participants
+                ),
+                return_exceptions=True,
+            )
+            collateral_map: Dict[str, Optional[Dict[str, Any]]] = {}
+            for p, resp in zip(active_participants, collateral_responses):
+                if isinstance(resp, Exception):
+                    logger.warning(
+                        f"Failed to fetch historical collateral for {p['index']}: {resp}"
+                    )
+                    collateral_map[p["index"]] = None
+                else:
+                    collateral_map[p["index"]] = resp
+
             participants_stats = []
             stats_for_saving = []
             for p in active_participants:
@@ -864,7 +889,23 @@ class InferenceService:
                         weight_to_confirm,
                         p["index"] in root_weights,
                     )
-                    
+
+                    collateral = None
+                    collateral_resp = collateral_map.get(p["index"])
+                    if collateral_resp is not None:
+                        try:
+                            collateral = _calc_participant_collateral_status(
+                                collateral_params,
+                                weight_to_confirm,
+                                epoch_data_for_participant.get("weight", 0),
+                                collateral_resp,
+                            )
+                        except Exception as e:
+                            logger.warning(
+                                f"Failed to compute historical collateral status for "
+                                f"{p['index']}: {e}"
+                            )
+
                     participant = ParticipantStats(
                         index=p["index"],
                         address=p["address"],
@@ -883,9 +924,10 @@ class InferenceService:
                         confirmation_poc_ratio_state=confirmation_rate["state"],
                         confirmation_poc_ratio_estimate=confirmation_rate["computed_estimate"],
                         participant_status=p.get("status"),
+                        collateral_status=CollateralStatus(**collateral) if collateral else None,
                     )
                     participants_stats.append(participant)
-                    
+
                     stats_dict = p.copy()
                     stats_dict["weight"] = epoch_data_for_participant.get("weight", 0)
                     stats_dict["models"] = epoch_data_for_participant.get("models", [])
@@ -899,6 +941,8 @@ class InferenceService:
                     stats_dict["confirmation_poc_ratio_state"] = confirmation_rate["state"]
                     stats_dict["confirmation_poc_ratio_estimate"] = confirmation_rate["computed_estimate"]
                     stats_dict["participant_status"] = p.get("status")
+                    if collateral is not None:
+                        stats_dict["collateral_status"] = collateral
                     stats_for_saving.append(stats_dict)
                 except Exception as e:
                     logger.warning(f"Failed to parse participant {p.get('index', 'unknown')}: {e}")
@@ -1225,8 +1269,14 @@ class InferenceService:
             scaled_ml_nodes_map = {}
             chain_ratio = None
             is_current_epoch_member = False
+            params: Optional[Dict[str, Any]] = None
+            # Use historical state for non-current epochs so collateral and
+            # params reflect the epoch being viewed, not the live chain.
+            # Falls back to current state inside the client if the node has
+            # pruned that height.
+            effective_height = None if is_current else height
             try:
-                params = (await self.client.get_inference_params())["params"]
+                params = (await self.client.get_inference_params(height=effective_height))["params"]
                 if is_current:
                     root_group = (
                         await self.client.get_current_epoch_group_data()
@@ -1266,6 +1316,29 @@ class InferenceService:
                     _apply_confirmation_rate(participant, confirmation_rate)
             except Exception as e:
                 logger.warning(f"Failed to compute scaled participant detail weights for {participant_id}: {e}")
+
+            # Recompute collateral_status so it stays consistent with the
+            # refreshed weight / weight_to_confirm above. Without this the
+            # Collateral card on the detail page can disagree with the values
+            # shown in the Weight widget on the same page and with the main
+            # participant list page.
+            if params is not None and participant.weight_to_confirm is not None:
+                try:
+                    collateral_params = params["collateral_params"]
+                    collateral_resp = await self.client.get_participant_collateral(
+                        participant_id,
+                        height=effective_height,
+                    )
+                    participant.collateral_status = CollateralStatus(
+                        **_calc_participant_collateral_status(
+                            collateral_params,
+                            participant.weight_to_confirm or 0,
+                            participant.weight or 0,
+                            collateral_resp,
+                        )
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to recompute collateral status for {participant_id}: {e}")
 
             try:
                 participant_data = await self.client.get_participant_confirmation_data(
