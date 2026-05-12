@@ -38,6 +38,7 @@ services:
       context: ./frontend
       args:
         VITE_API_URL: ${VITE_API_URL:-/api}
+        VITE_REPOSITORY_URL: ${VITE_REPOSITORY_URL:-https://github.com/gonka-ai/gonkascan}
     env_file:
       - config.env
     depends_on:

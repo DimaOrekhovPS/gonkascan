@@ -32,6 +32,8 @@ import { useScrolled } from './hooks/useScrolled'
 import { MeshBackground } from './components/common/MeshBackground'
 import { Select, type SelectOption } from './components/common/Select'
 
+const REPOSITORY_URL = import.meta.env.VITE_REPOSITORY_URL || 'https://github.com/gonka-ai/gonkascan'
+
 type Page =
   | 'dashboard'
   | 'models'
@@ -750,7 +752,7 @@ function App() {
                 <span className="text-[12.5px]">Gonkascan · Real-time Gonka network explorer</span>
               </div>
               <a
-                href="https://github.com/6block/gonkascan"
+                href={REPOSITORY_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group inline-flex items-center gap-2 text-slate-400 hover:text-slate-100 transition-colors"
