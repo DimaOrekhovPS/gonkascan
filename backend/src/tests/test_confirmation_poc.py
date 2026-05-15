@@ -75,6 +75,82 @@ class TestScaledWeightToConfirm:
         assert participant["ml_nodes"][0]["scaled_weight"] == 25
         assert participant["ml_nodes"][2]["scaled_weight"] == 14
 
+    @pytest.mark.asyncio
+    async def test_uses_confirmation_weight_scales_snapshot_when_available(self):
+        params = {
+            "poc_params": {
+                "models": [
+                    {
+                        "model_id": "model-a",
+                        "weight_scale_factor": {"value": "9", "exponent": 0},
+                    },
+                    {
+                        "model_id": "model-b",
+                        "weight_scale_factor": {"value": "9", "exponent": 0},
+                    },
+                ]
+            }
+        }
+        root = {
+            "epoch_index": "7",
+            "sub_group_models": ["legacy-only"],
+            "confirmation_weight_scales": [
+                {
+                    "model_id": "model-a",
+                    "weight_scale_factor": {"value": "25", "exponent": -2},
+                },
+                {
+                    "model_id": "model-b",
+                    "weight_scale_factor": {"value": "2", "exponent": 0},
+                },
+            ],
+        }
+        subgroups = {
+            "model-a": {
+                "validation_weights": [
+                    {
+                        "member_address": "gonka1test",
+                        "weight": "1000",
+                        "ml_nodes": [
+                            {"node_id": "node-1", "poc_weight": "51"},
+                            {"node_id": "node-2", "poc_weight": "50"},
+                        ],
+                    }
+                ]
+            },
+            "model-b": {
+                "validation_weights": [
+                    {
+                        "member_address": "gonka1test",
+                        "weight": "1000",
+                        "ml_nodes": [
+                            {"node_id": "node-1", "poc_weight": "7"},
+                        ],
+                    }
+                ]
+            },
+        }
+
+        service = InferenceService(FakeClient(subgroups), None)
+        result = await service._build_scaled_epoch_weight_data(7, params, root)
+
+        participant = result["gonka1test"]
+        assert participant["weight_to_confirm"] == 39
+        assert participant["models"] == [
+            {
+                "model_id": "model-a",
+                "raw_model_weight": 101,
+                "scaled_model_weight": 25,
+                "weight_scale_factor": "0.25",
+            },
+            {
+                "model_id": "model-b",
+                "raw_model_weight": 7,
+                "scaled_model_weight": 14,
+                "weight_scale_factor": "2",
+            },
+        ]
+
 
 class TestConfirmationRatio:
     def test_uses_deviation_adjusted_confirmation_weight_estimate_and_caps_at_one(self):
