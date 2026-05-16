@@ -673,9 +673,10 @@ class InferenceService:
                         if confirmation_weight_raw is not None
                         else None
                     )
+                    chain_ratio = _extract_chain_confirmation_ratio(p)
                     confirmation_rate = _get_confirmation_rate(
                         p.get("status"),
-                        None,
+                        chain_ratio,
                         confirmation_weight,
                         weight_to_confirm,
                         p["index"] in root_weights,
@@ -935,9 +936,10 @@ class InferenceService:
                         if confirmation_weight_raw is not None
                         else None
                     )
+                    chain_ratio = _extract_chain_confirmation_ratio(p)
                     confirmation_rate = _get_confirmation_rate(
                         p.get("status"),
-                        None,
+                        chain_ratio,
                         confirmation_weight,
                         weight_to_confirm,
                         p["index"] in root_weights,
@@ -1973,7 +1975,11 @@ class InferenceService:
 
             for participant in participants:
                 conf_info = confirmation_map.get(participant.index)
-                chain_ratio = None
+                chain_ratio = (
+                    participant.confirmation_poc_ratio
+                    if participant.confirmation_poc_ratio_source == "chain_confirmation_poc_ratio"
+                    else None
+                )
                 if conf_info:
                     if participant.weight_to_confirm is None:
                         participant.weight_to_confirm = conf_info["weight_to_confirm"]

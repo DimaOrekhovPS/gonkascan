@@ -21,6 +21,11 @@ class FakeClient:
         return {"epoch_group_data": self.subgroups[model_id]}
 
 
+class FakeCacheWithoutConfirmation:
+    async def get_confirmation_data(self, epoch_id):
+        return None
+
+
 class TestScaledWeightToConfirm:
     @pytest.mark.asyncio
     async def test_sums_scaled_model_subgroup_weights(self):
@@ -210,6 +215,42 @@ class TestConfirmationRatio:
         assert _extract_chain_confirmation_ratio({
             "current_epoch_stats": {"confirmationPoCRatio": None}
         }) is None
+
+    @pytest.mark.asyncio
+    async def test_merge_preserves_existing_chain_confirmation_ratio(self):
+        participant = ParticipantStats(
+            index="gonka1test",
+            address="gonka1testaddress",
+            weight=5000,
+            models=["model1"],
+            current_epoch_stats=CurrentEpochStats(
+                inference_count="100",
+                missed_requests="5",
+                earned_coins="1000",
+                rewarded_coins="900",
+                burned_coins="100",
+                validated_inferences="95",
+                invalidated_inferences="5"
+            ),
+            weight_to_confirm=100,
+            confirmation_weight=50,
+            confirmation_poc_ratio=0.73,
+            confirmation_poc_ratio_source="chain_confirmation_poc_ratio",
+            confirmation_poc_ratio_state="confirmed_by_cpoc",
+            participant_status="ACTIVE"
+        )
+
+        service = InferenceService(FakeClient({}), FakeCacheWithoutConfirmation())
+        result = await service.merge_confirmation_data(
+            7,
+            [participant],
+            123,
+            [{"index": "gonka1test"}],
+        )
+
+        assert result[0].confirmation_poc_ratio == 0.73
+        assert result[0].confirmation_poc_ratio_source == "chain_confirmation_poc_ratio"
+        assert result[0].confirmation_poc_ratio_estimate is None
 
 
 class TestCollateralStatus:
