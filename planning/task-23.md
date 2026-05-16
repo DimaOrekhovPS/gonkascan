@@ -1,19 +1,25 @@
-# Task 23: v0.2.13 Confirmation Weight Verifier
+# Task 23: v0.2.13 Confirmation Weight Calculation
 
 ## Goal
 
-Create a standalone script that validates the dashboard maintainer memo's v0.2.13 `weight_to_confirm` instructions against live chain API data.
+Update dashboard confirmation-weight logic for the v0.2.13 chain upgrade.
 
 ## Expected Result
 
-- Fetch root epoch group data for current or selected epoch.
-- Use `confirmation_weight_scales` as the source of truth when present.
-- Compute each participant's `weight_to_confirm` from subgroup ML-node `poc_weight` sums.
-- Compare the new denominator to the legacy params/subgroup-weight denominator.
-- Report local fallback confirmation ratios and available chain `confirmationPoCRatio` values.
+- Use root `epoch_group_data.confirmation_weight_scales` as the source of truth when it is present and non-empty.
+- Iterate only models listed in `confirmation_weight_scales`; do not add unrelated root `sub_group_models`.
+- Compute each model contribution from subgroup `validation_weights[].ml_nodes[].poc_weight`.
+- Keep root `validation_weights[].confirmation_weight` as the confirmed numerator.
+- Prefer chain `current_epoch_stats.confirmationPoCRatio` when present.
+- Preserve legacy `sub_group_models` plus params scaling for pre-v0.2.13 epochs.
+- Provide an operational cache reset path for stale post-upgrade dashboard rows.
 
 ## Approach
 
-1. Add a dependency-free Python script under `backend/scripts`.
-2. Support `--base`, optional `--epoch`, participant filtering, text output, and JSON output.
-3. Emit warnings when snapshot scales are absent, participant denominators are zero, or local fallback differs from chain ratio.
+1. Add helpers to decode `confirmation_weight_scales` from root epoch group data.
+2. Update `_build_scaled_epoch_weight_data` to choose the v0.2.13 snapshot path when available.
+3. For snapshot entries, fetch each model subgroup and compute `weight_to_confirm` from floored scaled ML-node PoC sums.
+4. Keep the existing params-based subgroup logic as a fallback when the snapshot is absent or empty.
+5. Ensure list and detail responses prefer chain `confirmationPoCRatio` before using local estimates.
+6. Add focused backend tests for snapshot behavior, legacy fallback, and chain-ratio preservation.
+7. Add a cache reset helper so operators can clear stale confirmation/reward rows after upgrade.
