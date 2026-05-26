@@ -125,6 +125,10 @@ def _int_field(data: Dict[str, Any], key: str, default: int = 0) -> int:
         return default
 
 
+def _ml_nodes_poc_weight(validation_weight: Dict[str, Any]) -> int:
+    return sum(_int_field(node, "poc_weight") for node in validation_weight.get("ml_nodes", []))
+
+
 def _floor_int(value: Decimal) -> int:
     return int(value.to_integral_value(rounding=ROUND_FLOOR))
 
@@ -224,6 +228,38 @@ def _model_scale_factors(params: Dict[str, Any]) -> Dict[str, Decimal]:
         for model in params.get("poc_params", {}).get("models", [])
         if model.get("model_id")
     }
+
+
+def _confirmation_weight_scale_entries(
+    epoch_group_data: Dict[str, Any],
+) -> List[Dict[str, Any]]:
+    scales = (
+        epoch_group_data.get("confirmation_weight_scales")
+        or epoch_group_data.get("confirmationWeightScales")
+        or []
+    )
+    if not isinstance(scales, list):
+        return []
+
+    entries = []
+    for scale in scales:
+        if not isinstance(scale, dict):
+            continue
+
+        model_id = scale.get("model_id") or scale.get("modelId")
+        if not model_id:
+            continue
+
+        try:
+            scale_factor = _decode_fixed_point(
+                scale.get("weight_scale_factor") or scale.get("weightScaleFactor")
+            )
+        except (KeyError, TypeError, ValueError):
+            continue
+
+        entries.append({"model_id": model_id, "scale_factor": scale_factor})
+
+    return entries
 
 
 def _scale_weight(raw_weight: int, scale_factor: Decimal) -> int:
@@ -414,7 +450,6 @@ class InferenceService:
         root_epoch_group_data: Dict[str, Any],
         height: Optional[int] = None,
     ) -> Dict[str, Dict[str, Any]]:
-        scale_factors = _model_scale_factors(params)
         participants: Dict[str, Dict[str, Any]] = defaultdict(
             lambda: {
                 "weight_to_confirm": 0,
@@ -424,10 +459,24 @@ class InferenceService:
             }
         )
 
-        model_ids = root_epoch_group_data.get("sub_group_models", [])
+        confirmation_scale_entries = _confirmation_weight_scale_entries(root_epoch_group_data)
+        use_confirmation_scales = bool(confirmation_scale_entries)
+        if confirmation_scale_entries:
+            model_entries = confirmation_scale_entries
+        else:
+            scale_factors = _model_scale_factors(params)
+            model_entries = [
+                {
+                    "model_id": model_id,
+                    "scale_factor": scale_factors.get(model_id, Decimal(1)),
+                }
+                for model_id in root_epoch_group_data.get("sub_group_models", [])
+            ]
+
         subgroup_epoch = int(root_epoch_group_data.get("epoch_index", epoch_id))
 
-        for model_id in model_ids:
+        for model_entry in model_entries:
+            model_id = model_entry["model_id"]
             try:
                 subgroup_resp = await self.client.get_epoch_group_data(
                     subgroup_epoch,
@@ -439,13 +488,17 @@ class InferenceService:
                 logger.warning(f"Failed to fetch subgroup weights for {model_id}: {e}")
                 continue
 
-            scale_factor = scale_factors.get(model_id, Decimal(1))
+            scale_factor = model_entry["scale_factor"]
             for member in subgroup.get("validation_weights", []):
                 participant_id = member.get("member_address")
                 if not participant_id:
                     continue
 
-                raw_model_weight = _int_field(member, "weight")
+                raw_model_weight = (
+                    _ml_nodes_poc_weight(member)
+                    if use_confirmation_scales
+                    else _int_field(member, "weight")
+                )
                 scaled_model_weight = _scale_weight(raw_model_weight, scale_factor)
                 participant_data = participants[participant_id]
                 participant_data["weight_to_confirm"] += scaled_model_weight
@@ -620,9 +673,10 @@ class InferenceService:
                         if confirmation_weight_raw is not None
                         else None
                     )
+                    chain_ratio = _extract_chain_confirmation_ratio(p)
                     confirmation_rate = _get_confirmation_rate(
                         p.get("status"),
-                        None,
+                        chain_ratio,
                         confirmation_weight,
                         weight_to_confirm,
                         p["index"] in root_weights,
@@ -882,9 +936,10 @@ class InferenceService:
                         if confirmation_weight_raw is not None
                         else None
                     )
+                    chain_ratio = _extract_chain_confirmation_ratio(p)
                     confirmation_rate = _get_confirmation_rate(
                         p.get("status"),
-                        None,
+                        chain_ratio,
                         confirmation_weight,
                         weight_to_confirm,
                         p["index"] in root_weights,
@@ -1920,7 +1975,11 @@ class InferenceService:
 
             for participant in participants:
                 conf_info = confirmation_map.get(participant.index)
-                chain_ratio = None
+                chain_ratio = (
+                    participant.confirmation_poc_ratio
+                    if participant.confirmation_poc_ratio_source == "chain_confirmation_poc_ratio"
+                    else None
+                )
                 if conf_info:
                     if participant.weight_to_confirm is None:
                         participant.weight_to_confirm = conf_info["weight_to_confirm"]
